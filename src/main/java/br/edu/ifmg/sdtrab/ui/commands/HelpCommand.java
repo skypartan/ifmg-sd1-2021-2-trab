@@ -5,15 +5,15 @@ import br.edu.ifmg.sdtrab.ui.WindowCommand;
 import br.edu.ifmg.sdtrab.util.InjectField;
 import br.edu.ifmg.sdtrab.util.PostInject;
 
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.PrintStream;
-import java.io.PrintWriter;
+import java.util.HashMap;
 
-public class BalanceCommand implements WindowCommand {
+public class HelpCommand implements WindowCommand {
 
     @InjectField
     public ApplicationContext context;
+    @InjectField
+    public HashMap<String, WindowCommand> commands;
 
     @PostInject
     public void init() {
@@ -22,7 +22,7 @@ public class BalanceCommand implements WindowCommand {
 
     @Override
     public String getName() {
-        return "saldo";
+        return "ajuda";
     }
 
     @Override
@@ -32,11 +32,17 @@ public class BalanceCommand implements WindowCommand {
 
     @Override
     public String getDescription() {
-        return "Retorna o saldo de sua conta";
+        return "Exibir lista de comandos suportados pelo sistema";
     }
 
     @Override
     public void execute(String[] args, PrintStream stdout) {
-        stdout.println("Saldo: ?");
+        stdout.println("Lista de comandos suportados pelo sistema:");
+        for (var command : commands.values()) {
+            stdout.printf("\t%s -> %s\n", command.getName(), command.getDescription());
+
+            if (command.getParameters() != null)
+                stdout.printf("\t\tParâmetros: %s\n", command.getParameters());
+        }
     }
 }

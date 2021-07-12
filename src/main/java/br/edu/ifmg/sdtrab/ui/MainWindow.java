@@ -2,6 +2,7 @@ package br.edu.ifmg.sdtrab.ui;
 
 import br.edu.ifmg.sdtrab.ApplicationContext;
 import br.edu.ifmg.sdtrab.ui.commands.BalanceCommand;
+import br.edu.ifmg.sdtrab.ui.commands.HelpCommand;
 import br.edu.ifmg.sdtrab.ui.commands.LoginCommand;
 import br.edu.ifmg.sdtrab.util.CommandBuilder;
 
@@ -12,37 +13,51 @@ import java.util.Scanner;
 public class MainWindow {
 
     private ApplicationContext context;
-    private HashMap<String, WindowCommand> commands;
+    private HashMap<String, WindowCommand> commands = new HashMap<>();
 
     private boolean running = true;
     private final Scanner scanner = new Scanner(System.in);
 
-    public MainWindow() {
+    public MainWindow() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
+        registerCommands();
+
         windowLoop();
     }
 
     public void windowLoop() {
-
         System.out.println(motd());
 
-        var input = scanner.nextLine();
         while (running) {
+            System.out.print("> ");
+            System.out.flush();
 
-            // ...
+            var input = scanner.nextLine();
+            var args = input.split("\\s+");
+
+            if (commands.containsKey(args[0])) {
+                var command = commands.get(args[0]);
+                command.execute(args, System.out);
+                System.out.flush();
+            }
 
             if (input.equals("exit")) {
                 System.out.println("Saindo...");
-                System.exit(0);
+                running = false;
             }
         }
     }
 
     public String motd() {
-        return "";
+        return "Internet Banking v1.0\n";
     }
 
     public void registerCommands() throws IllegalAccessException, InvocationTargetException, NoSuchMethodException,
             InstantiationException {
+
+        new CommandBuilder(context)
+                .type(HelpCommand.class)
+                .registry(commands)
+                .build();
 
         new CommandBuilder(context)
                 .type(LoginCommand.class)
@@ -53,9 +68,5 @@ public class MainWindow {
                 .type(BalanceCommand.class)
                 .registry(commands)
                 .build();
-    }
-
-    public void invokeCommand(WindowCommand command) {
-
     }
 }

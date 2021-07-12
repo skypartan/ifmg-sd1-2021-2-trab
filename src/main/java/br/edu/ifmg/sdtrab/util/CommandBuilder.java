@@ -27,6 +27,9 @@ public class CommandBuilder {
 
     public CommandBuilder registry(HashMap<String, WindowCommand> registry) {
         this.registry = registry;
+        if (registry == null)
+            throw new NullPointerException();
+
         return this;
     }
 
@@ -34,10 +37,10 @@ public class CommandBuilder {
             IllegalAccessException {
 
         var command = newCommand.getConstructor().newInstance();
+        registry.put(command.getName(), command);
+
         injectFields(command);
         construct(command);
-
-        registry.put(command.getName(), command);
 
         return command;
     }
@@ -47,10 +50,14 @@ public class CommandBuilder {
     //<editor-fold desc="Dependency injection">
 
     public void injectFields(WindowCommand command) throws IllegalAccessException {
-        for (var field : command.getClass().getFields()) {
+        for (var field : command.getClass().getDeclaredFields()) {
             var injectFieldAnnotation = field.getAnnotationsByType(InjectField.class);
-            if (injectFieldAnnotation.length != 0)
-                field.set(command, context);
+            if (injectFieldAnnotation.length != 0) {
+                if (field.getType().equals(ApplicationContext.class))
+                    field.set(command, context);
+                if (field.getType().equals(HashMap.class))
+                    field.set(command, registry);
+            }
         }
     }
 

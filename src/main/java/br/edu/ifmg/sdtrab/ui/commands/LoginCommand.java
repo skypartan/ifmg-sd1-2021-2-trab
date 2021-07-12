@@ -6,11 +6,13 @@ import br.edu.ifmg.sdtrab.util.InjectField;
 import br.edu.ifmg.sdtrab.util.PostInject;
 
 import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 
 public class LoginCommand implements WindowCommand {
 
     @InjectField
-    private ApplicationContext context;
+    public ApplicationContext context;
 
     @PostInject
     public void init() {
@@ -24,7 +26,7 @@ public class LoginCommand implements WindowCommand {
 
     @Override
     public String getParameters() {
-        return "<username> <password>";
+        return "<usuario> <senha>";
     }
 
     @Override
@@ -33,7 +35,7 @@ public class LoginCommand implements WindowCommand {
     }
 
     @Override
-    public void execute(String[] args, OutputStream stdout) {
-
+    public void execute(String[] args, PrintStream stdout) {
+        stdout.println("Login executado");
     }
 }
