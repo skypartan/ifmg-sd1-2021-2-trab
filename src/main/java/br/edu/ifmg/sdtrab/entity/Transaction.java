@@ -6,6 +6,7 @@ public class Transaction {
 
     private User sender;
     private User receiver;
+    private float value;
 
     private Timestamp time;
 }
