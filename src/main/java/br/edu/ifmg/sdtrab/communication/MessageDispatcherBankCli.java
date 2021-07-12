@@ -25,13 +25,13 @@ class MessageDispatcherBankCli implements RequestHandler {
         for(int i=0; i < 10; i++) {
             Util.sleep(100);
             System.out.println("Casting message #" + i);
-            byte[] pl=("Number #" + i).getBytes();
+            String pl=("Number #" + i);
             RequestOptions opcoes = new RequestOptions();
             opcoes.setMode(ResponseMode.GET_ALL); // ESPERA receber a resposta da MAIORIA dos membros (MAJORITY) // Outras opções: ALL, FIRST, NONE
             opcoes.setAnycasting(false);
-            opcoes.SYNC();
+            opcoes.ASYNC();
             rsp_list=disp.castMessage(null,
-                    new BytesMessage(null, pl, 0, pl.length),
+                    new ObjectMessage(null, pl),
                     opcoes);
             System.out.println("Responses:\n" +rsp_list);
         }
@@ -39,7 +39,7 @@ class MessageDispatcherBankCli implements RequestHandler {
     }
 
     public Object handle(Message msg) throws Exception {
-        System.out.println("handle(): " + msg);
+        System.out.println("handle(): " +msg.getObject());
         return "Success!";
     }
 
