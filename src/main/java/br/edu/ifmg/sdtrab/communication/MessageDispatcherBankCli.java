@@ -44,7 +44,7 @@ class MessageDispatcherBankCli implements RequestHandler {
             }
             Util.close(disp, channel);
         //} finally {
-            lock.unlock();
+         //   lock.unlock();
         //}
     }
 
