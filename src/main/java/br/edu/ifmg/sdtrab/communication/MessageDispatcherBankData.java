@@ -1,19 +1,16 @@
 package br.edu.ifmg.sdtrab.communication;
 
+import br.edu.ifmg.sdtrab.entity.User;
 import org.jgroups.*;
 import org.jgroups.blocks.*;
-import org.jgroups.blocks.cs.ReceiverAdapter;
-import org.jgroups.blocks.locking.LockService;
-import org.jgroups.protocols.pbcast.ViewHandler;
 import org.jgroups.util.RspList;
 import org.jgroups.util.Util;
 
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.concurrent.locks.Lock;
+import java.math.BigDecimal;
+import java.util.HashMap;
 
 
-class MessageDispatcherBankCli implements RequestHandler {
+class MessageDispatcherBankData implements RequestHandler {
     JChannel          channel;
     MessageDispatcher disp;
     RspList           rsp_list;
@@ -31,14 +28,20 @@ class MessageDispatcherBankCli implements RequestHandler {
         //try {
             for (int i = 0; i < 10; i++) {
                 Util.sleep(100);
-                System.out.println("Casting message #" + i);
-                String pl = ("Number #" + i);
+                HashMap<String, String> test = new HashMap();
+                test.put( "usuario", "user");
+                test.put("senha", "123");
+                Message u = new Message();
+                u.setTipo("NEW");
+                u.setEntrada(test);
                 RequestOptions opcoes = new RequestOptions();
-                opcoes.setMode(ResponseMode.GET_ALL); // ESPERA receber a resposta da MAIORIA dos membros (MAJORITY) // Outras opções: ALL, FIRST, NONE
+                opcoes.setMode(ResponseMode.GET_ALL);
                 opcoes.setAnycasting(false);
+                System.out.println("Casting message #" + i);
                 opcoes.ASYNC();
+                ObjectMessage msg = new ObjectMessage(null).setObject(u);
                 rsp_list = disp.castMessage(null,
-                        new ObjectMessage(null, pl),
+                        msg,
                         opcoes);
                 System.out.println("Responses:\n" + rsp_list);
             }
@@ -48,20 +51,35 @@ class MessageDispatcherBankCli implements RequestHandler {
         //}
     }
 
-    public Object handle(Message msg) throws Exception {
-        if(msg.getObject().equals("Number #1")){
-            System.out.println("Bom Dia");
+    @Override
+    public Object handle(org.jgroups.Message msg) throws Exception {
+        Message msgF = msg.getObject();
+        if (msgF.getTipo().equals("NEW")){
+            System.out.println(msgF.getTipo());
+            HashMap<String, String> e = msgF.getEntrada();
+            System.out.println(e.get("usuario")+" "+e.get("senha"));
+        } else if (msgF.getTipo().equals("LOGIN")){
+
+        } else if (msgF.getTipo().equals("TRANSFER")) {
+
+        } else if (msgF.getTipo().equals("TRANSACTIONS")) {
+
+        } else if (msgF.getTipo().equals("BALACE")) {
+
         }
         System.out.println("handle(): " +msg.getObject());
+
         return "Success!";
     }
 
     public static void main(String[] args) {
         try {
-            new MessageDispatcherBankCli().start();
+            new MessageDispatcherBankData().start();
         }
         catch(Exception e) {
             System.err.println(e);
         }
     }
+
+
 }
