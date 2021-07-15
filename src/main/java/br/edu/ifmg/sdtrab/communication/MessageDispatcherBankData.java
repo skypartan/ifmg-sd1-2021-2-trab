@@ -29,17 +29,15 @@ class MessageDispatcherBankData implements RequestHandler {
             for (int i = 0; i < 10; i++) {
                 Util.sleep(100);
                 HashMap<String, String> test = new HashMap();
+                test.put("tipo", "NEW");
                 test.put( "usuario", "user");
                 test.put("senha", "123");
-                Message u = new Message();
-                u.setTipo("NEW");
-                u.setEntrada(test);
                 RequestOptions opcoes = new RequestOptions();
                 opcoes.setMode(ResponseMode.GET_ALL);
                 opcoes.setAnycasting(false);
                 System.out.println("Casting message #" + i);
                 opcoes.ASYNC();
-                ObjectMessage msg = new ObjectMessage(null).setObject(u);
+                ObjectMessage msg = new ObjectMessage(null).setObject(test);
                 rsp_list = disp.castMessage(null,
                         msg,
                         opcoes);
@@ -53,18 +51,17 @@ class MessageDispatcherBankData implements RequestHandler {
 
     @Override
     public Object handle(org.jgroups.Message msg) throws Exception {
-        Message msgF = msg.getObject();
-        if (msgF.getTipo().equals("NEW")){
-            System.out.println(msgF.getTipo());
-            HashMap<String, String> e = msgF.getEntrada();
-            System.out.println(e.get("usuario")+" "+e.get("senha"));
-        } else if (msgF.getTipo().equals("LOGIN")){
+        HashMap msgF = msg.getObject();
+        if (msgF.get("tipo").equals("NEW")){
+            System.out.println(msgF.get("tipo"));
+            System.out.println(msgF.get("usuario")+" "+msgF.get("senha"));
+        } else if (msgF.get("tipo").equals("LOGIN")){
 
-        } else if (msgF.getTipo().equals("TRANSFER")) {
+        } else if (msgF.get("tipo").equals("TRANSFER")) {
 
-        } else if (msgF.getTipo().equals("TRANSACTIONS")) {
+        } else if (msgF.get("tipo").equals("TRANSACTIONS")) {
 
-        } else if (msgF.getTipo().equals("BALACE")) {
+        } else if (msgF.get("tipo").equals("BALACE")) {
 
         }
         System.out.println("handle(): " +msg.getObject());
