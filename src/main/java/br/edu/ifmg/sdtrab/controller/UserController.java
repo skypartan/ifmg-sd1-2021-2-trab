@@ -4,30 +4,25 @@ import br.edu.ifmg.sdtrab.entity.User;
 import br.edu.ifmg.sdtrab.storage.UserDao;
 import org.jgroups.*;
 import org.jgroups.blocks.*;
-import org.jgroups.blocks.cs.ReceiverAdapter;
 import org.jgroups.blocks.locking.LockService;
 import org.jgroups.protocols.*;
 import org.jgroups.protocols.pbcast.GMS;
 import org.jgroups.protocols.pbcast.NAKACK2;
 import org.jgroups.protocols.pbcast.STATE_TRANSFER;
 import org.jgroups.stack.Protocol;
-import org.jgroups.util.MessageBatch;
 import org.jgroups.util.Util;
 
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.concurrent.locks.Lock;
 
 public class UserController implements RequestHandler, Receiver {
 
     private JChannel channel;
     private Address address;
     private MessageDispatcher dispatcher;
-    LockService lock_service;
-    UserDao userDao;
+    private LockService lockService;
+    private UserDao userDao;
 
     public UserController() {
 
@@ -38,7 +33,7 @@ public class UserController implements RequestHandler, Receiver {
         channel.setReceiver(this);
         channel.connect("ebankUser");
         dispatcher = new MessageDispatcher(channel, this);
-        lock_service = new LockService(channel);
+        lockService = new LockService(channel);
         address = channel.getAddress();
     }
 
@@ -55,20 +50,24 @@ public class UserController implements RequestHandler, Receiver {
             options.setMode(ResponseMode.GET_ALL);
             options.setAnycasting(false);
             options.SYNC();
+
             HashMap<String, String> hs = new HashMap();
             hs.put("tipo", "NEW");
             hs.put("usuario", name);
             hs.put("senha", password);
+
             var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
             if (list == null) {
                 return null;
-            } else {
+            }
+            else {
                 User u = new User();
                 u.setName(name);
                 u.setPasswordHash(password);
                 userDao.save(u);
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -84,17 +83,21 @@ public class UserController implements RequestHandler, Receiver {
             options.setMode(ResponseMode.GET_FIRST);
             options.setAnycasting(false);
             options.SYNC();
+
             HashMap<String, String> hs = new HashMap();
             hs.put("tipo", "NEW");
             hs.put("usuario", name);
             hs.put("senha", password);
+
             var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
             if (list == null) {
                 return false;
-            } else {
+            }
+            else {
 
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -119,14 +122,17 @@ public class UserController implements RequestHandler, Receiver {
         if (msgF.get("tipo").equals("NEW")) {
             System.out.println(msgF.get("tipo"));
             System.out.println(msgF.get("usuario") + " " + msgF.get("senha"));
-        } else if (msgF.get("tipo").equals("LOGIN")) {
+        }
+        else if (msgF.get("tipo").equals("LOGIN")) {
             HashMap<String, String> msgL = msg.getObject();
             String user = msgL.get("usuario");
             String password = msgL.get("senha");
             authUser(user, password);
-        } else if (msgF.get("tipo").equals("BALACE")) {
+        }
+        else if (msgF.get("tipo").equals("BALACE")) {
 
-        }else{
+        }
+        else {
 
         }
         return null;
@@ -140,14 +146,17 @@ public class UserController implements RequestHandler, Receiver {
             System.out.println(msgF.get("tipo"));
             System.out.println(msgF.get("usuario") + " " + msgF.get("senha"));
             response.send("Sucess", false);
-        } else if (msgF.get("tipo").equals("LOGIN")) {
+        }
+        else if (msgF.get("tipo").equals("LOGIN")) {
             HashMap<String, String> msgL = msg.getObject();
             String user = msgL.get("usuario");
             String password = msgL.get("senha");
             authUser(user, password);
-        } else if (msgF.get("tipo").equals("BALACE")) {
+        }
+        else if (msgF.get("tipo").equals("BALACE")) {
 
-        } else {
+        }
+        else {
 
         }
     }
