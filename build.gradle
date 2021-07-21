@@ -11,4 +11,5 @@ repositories {
 
 dependencies {
     implementation 'org.jgroups:jgroups:5.1.8.Final'
+    implementation 'org.mariadb.jdbc:mariadb-java-client:2.7.3'
 }

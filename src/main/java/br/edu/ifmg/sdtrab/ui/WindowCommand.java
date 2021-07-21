@@ -1,5 +1,6 @@
 package br.edu.ifmg.sdtrab.ui;
 
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
@@ -9,5 +10,5 @@ public interface WindowCommand {
     String getParameters();
     String getDescription();
 
-    void execute(String[] args, PrintStream stdout);
+    void execute(String[] args, PrintStream stdout, InputStream stdin);
 }

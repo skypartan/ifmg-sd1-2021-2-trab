@@ -10,6 +10,10 @@ public class User {
 
     private BigDecimal balance;
 
+    public User() {
+        balance = BigDecimal.valueOf(10000);
+    }
+
     public long getId() {
         return id;
     }

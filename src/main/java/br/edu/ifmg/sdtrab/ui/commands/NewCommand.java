@@ -4,7 +4,9 @@ import br.edu.ifmg.sdtrab.ApplicationContext;
 import br.edu.ifmg.sdtrab.ui.WindowCommand;
 import br.edu.ifmg.sdtrab.util.InjectField;
 
+import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.Scanner;
 
 public class NewCommand implements WindowCommand {
 
@@ -13,7 +15,7 @@ public class NewCommand implements WindowCommand {
 
     @Override
     public String getName() {
-        return null;
+        return "new";
     }
 
     @Override
@@ -23,11 +25,27 @@ public class NewCommand implements WindowCommand {
 
     @Override
     public String getDescription() {
-        return null;
+        return "Criar nova conta de usuário";
     }
 
     @Override
-    public void execute(String[] args, PrintStream stdout) {
+    public void execute(String[] args, PrintStream stdout, InputStream stdin) {
+        stdout.println("Iniciada criação de novo usuário");
+        stdout.println("Informe os dados: ");
 
+        var scan = new Scanner(stdin);
+
+        stdout.print("\tNome: ");
+        var name = scan.nextLine();
+        stdout.print("\tSenha: ");
+        var password = scan.nextLine();
+
+        var user = context.getUserController().newUser(name, password);
+        if (user != null) {
+            stdout.println("");
+        }
+        else {
+
+        }
     }
 }

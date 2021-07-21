@@ -5,6 +5,7 @@ import br.edu.ifmg.sdtrab.ui.WindowCommand;
 import br.edu.ifmg.sdtrab.util.InjectField;
 import br.edu.ifmg.sdtrab.util.PostInject;
 
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
 
@@ -36,7 +37,7 @@ public class HelpCommand implements WindowCommand {
     }
 
     @Override
-    public void execute(String[] args, PrintStream stdout) {
+    public void execute(String[] args, PrintStream stdout, InputStream stdin) {
         stdout.println("Lista de comandos suportados pelo sistema:");
         for (var command : commands.values()) {
             stdout.printf("\t%s -> %s\n", command.getName(), command.getDescription());

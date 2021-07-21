@@ -2,6 +2,7 @@ package br.edu.ifmg.sdtrab.ui.commands;
 
 import br.edu.ifmg.sdtrab.ui.WindowCommand;
 
+import java.io.InputStream;
 import java.io.PrintStream;
 
 public class HistoryCommand implements WindowCommand {
@@ -22,7 +23,7 @@ public class HistoryCommand implements WindowCommand {
     }
 
     @Override
-    public void execute(String[] args, PrintStream stdout) {
+    public void execute(String[] args, PrintStream stdout, InputStream stdin) {
 
     }
 }

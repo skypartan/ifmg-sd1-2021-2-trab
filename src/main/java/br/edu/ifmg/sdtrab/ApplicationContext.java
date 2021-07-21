@@ -1,24 +1,42 @@
 package br.edu.ifmg.sdtrab;
 
-import br.edu.ifmg.sdtrab.controller.NetworkController;
 import br.edu.ifmg.sdtrab.controller.TransactionController;
 import br.edu.ifmg.sdtrab.controller.UserController;
 
 public class ApplicationContext {
 
-    private NetworkController networkController;
     private UserController userController;
     private TransactionController transactionController;
 
     public ApplicationContext() {
-        networkController = new NetworkController();
+        userController = new UserController();
+
+        // TODO(lucasgb): Enviar requisição de download do estado atual do sistema
     }
 
-    public NetworkController getNetworkController() {
-        return networkController;
+    public void init() throws Exception {
+        userController.init();
     }
 
-    public void setNetworkController(NetworkController networkController) {
-        this.networkController = networkController;
+
+
+    //<editor-fold desc="Getters e Setters">
+
+    public UserController getUserController() {
+        return userController;
     }
+
+    public void setUserController(UserController userController) {
+        this.userController = userController;
+    }
+
+    public TransactionController getTransactionController() {
+        return transactionController;
+    }
+
+    public void setTransactionController(TransactionController transactionController) {
+        this.transactionController = transactionController;
+    }
+
+    //</editor-fold>
 }

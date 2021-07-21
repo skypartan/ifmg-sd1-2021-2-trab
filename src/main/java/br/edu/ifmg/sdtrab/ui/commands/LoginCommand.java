@@ -5,6 +5,7 @@ import br.edu.ifmg.sdtrab.ui.WindowCommand;
 import br.edu.ifmg.sdtrab.util.InjectField;
 import br.edu.ifmg.sdtrab.util.PostInject;
 
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -35,7 +36,7 @@ public class LoginCommand implements WindowCommand {
     }
 
     @Override
-    public void execute(String[] args, PrintStream stdout) {
+    public void execute(String[] args, PrintStream stdout, InputStream stdin) {
         stdout.println("Login executado");
     }
 }

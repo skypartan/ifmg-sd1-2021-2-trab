@@ -5,10 +5,7 @@ import br.edu.ifmg.sdtrab.ui.WindowCommand;
 import br.edu.ifmg.sdtrab.util.InjectField;
 import br.edu.ifmg.sdtrab.util.PostInject;
 
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintStream;
-import java.io.PrintWriter;
+import java.io.*;
 
 public class BalanceCommand implements WindowCommand {
 
@@ -36,7 +33,7 @@ public class BalanceCommand implements WindowCommand {
     }
 
     @Override
-    public void execute(String[] args, PrintStream stdout) {
+    public void execute(String[] args, PrintStream stdout, InputStream stdin) {
         stdout.println("Saldo: ?");
     }
 }

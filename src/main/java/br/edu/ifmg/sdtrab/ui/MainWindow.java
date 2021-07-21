@@ -4,6 +4,7 @@ import br.edu.ifmg.sdtrab.ApplicationContext;
 import br.edu.ifmg.sdtrab.ui.commands.BalanceCommand;
 import br.edu.ifmg.sdtrab.ui.commands.HelpCommand;
 import br.edu.ifmg.sdtrab.ui.commands.LoginCommand;
+import br.edu.ifmg.sdtrab.ui.commands.NewCommand;
 import br.edu.ifmg.sdtrab.util.CommandBuilder;
 
 import java.lang.reflect.InvocationTargetException;
@@ -18,7 +19,7 @@ public class MainWindow {
     private boolean running = true;
     private final Scanner scanner = new Scanner(System.in);
 
-    public MainWindow() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
+    public MainWindow() throws Exception {
         registerCommands();
 
         windowLoop();
@@ -36,7 +37,7 @@ public class MainWindow {
 
             if (commands.containsKey(args[0])) {
                 var command = commands.get(args[0]);
-                command.execute(args, System.out);
+                command.execute(args, System.out, System.in);
                 System.out.flush();
             }
 
@@ -51,8 +52,10 @@ public class MainWindow {
         return "Internet Banking v1.0\n";
     }
 
-    public void registerCommands() throws IllegalAccessException, InvocationTargetException, NoSuchMethodException,
-            InstantiationException {
+    public void registerCommands() throws Exception {
+
+        context = new ApplicationContext();
+        context.init();
 
         new CommandBuilder(context)
                 .type(HelpCommand.class)
@@ -61,6 +64,11 @@ public class MainWindow {
 
         new CommandBuilder(context)
                 .type(LoginCommand.class)
+                .registry(commands)
+                .build();
+
+        new CommandBuilder(context)
+                .type(NewCommand.class)
                 .registry(commands)
                 .build();
 
