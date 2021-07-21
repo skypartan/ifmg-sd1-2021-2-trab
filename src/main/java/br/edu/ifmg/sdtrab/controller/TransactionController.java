@@ -12,6 +12,7 @@ import org.jgroups.stack.Protocol;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 
 
 public class TransactionController implements RequestHandler, Receiver {
