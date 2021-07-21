@@ -1,6 +1,7 @@
 package br.edu.ifmg.sdtrab.controller;
 
 import br.edu.ifmg.sdtrab.entity.User;
+import br.edu.ifmg.sdtrab.storage.UserDao;
 import org.jgroups.*;
 import org.jgroups.blocks.*;
 import org.jgroups.blocks.cs.ReceiverAdapter;
@@ -21,6 +22,7 @@ public class UserController implements RequestHandler, Receiver {
     private JChannel channel;
     private Address address;
     private MessageDispatcher dispatcher;
+    private UserDao userDao;
 
     public UserController() {
 
@@ -33,6 +35,8 @@ public class UserController implements RequestHandler, Receiver {
         dispatcher = new MessageDispatcher(channel, this);
 
         address = channel.getAddress();
+
+        userDao = new UserDao();
     }
 
     public void close() {
@@ -42,6 +46,8 @@ public class UserController implements RequestHandler, Receiver {
     public User newUser(String name, String password) {
         System.out.println("newUser");
         // TODO(lucasgb): Verificações
+
+        var user = new User(name, password);
 
         try {
             var options = new RequestOptions();
@@ -54,6 +60,8 @@ public class UserController implements RequestHandler, Receiver {
 
             // usuario aceito
             // cadastrar
+
+            userDao.save(user);
         }
         catch (Exception e) {
             e.printStackTrace();

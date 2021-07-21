@@ -1,6 +1,7 @@
 ###
 
 .idea
+storage.properties
 
 ### Gradle template
 .gradle

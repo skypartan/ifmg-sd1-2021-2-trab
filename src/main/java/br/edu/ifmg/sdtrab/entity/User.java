@@ -1,10 +1,11 @@
 package br.edu.ifmg.sdtrab.entity;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
-public class User {
+public class User implements Serializable {
 
-    private long id;
+    private int id;
     private String name;
     private String passwordHash;
 
@@ -14,11 +15,17 @@ public class User {
         balance = BigDecimal.valueOf(10000);
     }
 
-    public long getId() {
+    public User(String name, String password) {
+        this.name = name;
+        this.passwordHash = password;
+        balance = BigDecimal.valueOf(10000);
+    }
+
+    public int getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
