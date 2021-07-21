@@ -5,24 +5,29 @@ import br.edu.ifmg.sdtrab.storage.UserDao;
 import org.jgroups.*;
 import org.jgroups.blocks.*;
 import org.jgroups.blocks.cs.ReceiverAdapter;
+import org.jgroups.blocks.locking.LockService;
 import org.jgroups.protocols.*;
 import org.jgroups.protocols.pbcast.GMS;
 import org.jgroups.protocols.pbcast.NAKACK2;
 import org.jgroups.protocols.pbcast.STATE_TRANSFER;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.MessageBatch;
+import org.jgroups.util.Util;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.concurrent.locks.Lock;
 
 public class UserController implements RequestHandler, Receiver {
 
     private JChannel channel;
     private Address address;
     private MessageDispatcher dispatcher;
-    private UserDao userDao;
+    LockService lock_service;
+    UserDao userDao;
 
     public UserController() {
 
@@ -31,39 +36,39 @@ public class UserController implements RequestHandler, Receiver {
     public void init() throws Exception {
         channel = new JChannel(channelProtocols());
         channel.setReceiver(this);
-        channel.connect("ebank");
+        channel.connect("ebankUser");
         dispatcher = new MessageDispatcher(channel, this);
-
+        lock_service = new LockService(channel);
         address = channel.getAddress();
-
-        userDao = new UserDao();
     }
 
     public void close() {
-
+        Util.close(dispatcher, channel);
     }
 
     public User newUser(String name, String password) {
         System.out.println("newUser");
         // TODO(lucasgb): Verificações
 
-        var user = new User(name, password);
-
         try {
             var options = new RequestOptions();
             options.setMode(ResponseMode.GET_ALL);
             options.setAnycasting(false);
-
-            var list = dispatcher.castMessage(null, new ObjectMessage(null, "teste"), options);
-            if (list == null)
+            options.SYNC();
+            HashMap<String, String> hs = new HashMap();
+            hs.put("tipo", "NEW");
+            hs.put("usuario", name);
+            hs.put("senha", password);
+            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            if (list == null) {
                 return null;
-
-            // usuario aceito
-            // cadastrar
-
-            userDao.save(user);
-        }
-        catch (Exception e) {
+            } else {
+                User u = new User();
+                u.setName(name);
+                u.setPasswordHash(password);
+                userDao.save(u);
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -71,13 +76,30 @@ public class UserController implements RequestHandler, Receiver {
     }
 
     public boolean authUser(String name, String password) {
+        System.out.println("newUser");
+        // TODO(lucasgb): Verificações
+
+        try {
+            var options = new RequestOptions();
+            options.setMode(ResponseMode.GET_FIRST);
+            options.setAnycasting(false);
+            options.SYNC();
+            HashMap<String, String> hs = new HashMap();
+            hs.put("tipo", "NEW");
+            hs.put("usuario", name);
+            hs.put("senha", password);
+            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            if (list == null) {
+                return false;
+            } else {
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return false;
     }
-
-    public void saveUser(User user) {
-
-    }
-
 
     // Mensagem recebida
     @Override
@@ -93,20 +115,47 @@ public class UserController implements RequestHandler, Receiver {
     // Processar requisição síncrona
     @Override
     public Object handle(Message msg) throws Exception {
-        System.out.println("handle sync");
+        HashMap msgF = msg.getObject();
+        if (msgF.get("tipo").equals("NEW")) {
+            System.out.println(msgF.get("tipo"));
+            System.out.println(msgF.get("usuario") + " " + msgF.get("senha"));
+        } else if (msgF.get("tipo").equals("LOGIN")) {
+            HashMap<String, String> msgL = msg.getObject();
+            String user = msgL.get("usuario");
+            String password = msgL.get("senha");
+            authUser(user, password);
+        } else if (msgF.get("tipo").equals("BALACE")) {
+
+        }else{
+
+        }
         return null;
     }
 
     // Processar requisição assíncrona
     @Override
-    public void handle(Message request, Response response) throws Exception {
-        System.out.println("handle async");
+    public void handle(Message msg, Response response) throws Exception {
+        HashMap msgF = msg.getObject();
+        if (msgF.get("tipo").equals("NEW")) {
+            System.out.println(msgF.get("tipo"));
+            System.out.println(msgF.get("usuario") + " " + msgF.get("senha"));
+            response.send("Sucess", false);
+        } else if (msgF.get("tipo").equals("LOGIN")) {
+            HashMap<String, String> msgL = msg.getObject();
+            String user = msgL.get("usuario");
+            String password = msgL.get("senha");
+            authUser(user, password);
+        } else if (msgF.get("tipo").equals("BALACE")) {
+
+        } else {
+
+        }
     }
 
     private Protocol[] channelProtocols() throws UnknownHostException {
         var masterNodeAddress = System.getenv("MASTER_NODE_HOST");
 
-        return new Protocol[] {
+        return new Protocol[]{
                 // UDP Stack
                 new UDP().setBindAddr(InetAddress.getByName("127.0.0.1")),
                 new PING(), // Discovery protocol

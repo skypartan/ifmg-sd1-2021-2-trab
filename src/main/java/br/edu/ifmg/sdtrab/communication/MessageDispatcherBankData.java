@@ -30,7 +30,6 @@ class MessageDispatcherBankData implements RequestHandler {
         //lock.lock();
         //try {
         if (isMensage) {
-
             mensagem(h, opcoes);
         } else {
             eventLoop();
@@ -41,13 +40,13 @@ class MessageDispatcherBankData implements RequestHandler {
         //}
     }
 
-    public String mensagem(HashMap<String, String> h, RequestOptions opcoes) throws Exception {
+    public String mensagem(HashMap h, RequestOptions opcoes) throws Exception {
 
         ObjectMessage msg = new ObjectMessage(null).setObject(h);
         rsp_list = disp.castMessage(null,
                 msg,
                 opcoes);
-        System.out.println("Responses:\n" + rsp_list);
+        System.out.println("Responses:\n" + rsp_list.getResults());
         return "";
     }
 
@@ -81,7 +80,7 @@ class MessageDispatcherBankData implements RequestHandler {
     public static void main(String[] args) {
         try {
 
-            for (int i = 0; i < 10; i++) {
+            //for (int i = 0; i < 10; i++) {
                 Util.sleep(100);
                 HashMap<String, String> test = new HashMap();
                 test.put("tipo", "NEW");
@@ -90,10 +89,10 @@ class MessageDispatcherBankData implements RequestHandler {
                 RequestOptions opcoes = new RequestOptions();
                 opcoes.setMode(ResponseMode.GET_ALL);
                 opcoes.setAnycasting(false);
-                System.out.println("Casting message #" + i);
+                System.out.println("Casting message #" + 0);
                 opcoes.SYNC();
                 new MessageDispatcherBankData().start(true, test, opcoes);
-            }
+          //  }
         } catch (Exception e) {
             System.err.println(e);
         }
