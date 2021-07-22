@@ -98,8 +98,8 @@ public class TransactionController implements RequestHandler, Receiver {
                         if (list.getResults().contains(1) || list.getResults().contains(2) || list.getResults().contains(3)) {
                             return "Erro: Faça essa operação mais tarde";
                         } else {
-                            //userDao.updateBalance(u1.getBalance().floatValue() - value);
-                            //userDao.updateBalance(u2.getBalance().floatValue() + value);
+                            userDao.update(u1, u1.getBalance().floatValue() - value);
+                            userDao.update(u2, u2.getBalance().floatValue() + value);
                             transactionDao.save(transaction);
                         }
                     } finally {

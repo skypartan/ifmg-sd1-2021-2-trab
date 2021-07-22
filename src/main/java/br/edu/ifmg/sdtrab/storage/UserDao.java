@@ -25,6 +25,18 @@ public class UserDao {
         return statement.execute();
     }
 
+    public boolean update(User user, Float balanceFinal) throws SQLException {
+        var sql = "UPDATE user SET  name=?,password=?, balance=? WHERE id=?";
+
+        var statement = connection.prepareStatement(sql);
+        statement.setString(1, user.getName());
+        statement.setString(2, user.getPasswordHash());
+        statement.setFloat(3, balanceFinal);
+        statement.setInt(4, user.getId());
+
+        return statement.executeUpdate() > 0;
+    }
+
     public boolean delete(User user) throws SQLException {
         var sql = "delete from user where id = ?;";
         var statement = connection.prepareStatement(sql);

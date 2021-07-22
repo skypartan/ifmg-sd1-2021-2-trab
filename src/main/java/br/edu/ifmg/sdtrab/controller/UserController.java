@@ -33,7 +33,6 @@ public class UserController implements RequestHandler, Receiver {
         channel.setReceiver(this);
         channel.connect("ebankUser");
         dispatcher = new MessageDispatcher(channel, this);
-        lockService = new LockService(channel);
         address = channel.getAddress();
     }
 
