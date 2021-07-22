@@ -8,6 +8,7 @@ import org.jgroups.util.Util;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.Scanner;
 
 import static java.lang.Boolean.FALSE;
@@ -46,12 +47,16 @@ class MessageDispatcherBankData implements RequestHandler {
         rsp_list = disp.castMessage(null,
                 msg,
                 opcoes);
+        if (rsp_list.getResults().contains(1) || rsp_list.getResults().contains(2) || rsp_list.getResults().contains(3)){
+            System.out.println("ERRO");
+        }
         System.out.println("Responses:\n" + rsp_list.getResults());
         return "";
     }
 
     @Override
     public Object handle(org.jgroups.Message msg) throws Exception {
+
         HashMap msgF = msg.getObject();
         if (msgF.get("tipo").equals("NEW")) {
             System.out.println(msgF.get("tipo"));
@@ -66,8 +71,13 @@ class MessageDispatcherBankData implements RequestHandler {
 
         }
         System.out.println("handle(): " + msg.getObject());
-
-        return "Success!";
+        Random gerador = new Random();
+        int x = gerador.nextInt(2);
+        if (x == 0) {
+            return x;
+        }else{
+            return x;
+        }
     }
 
     private void eventLoop() throws Exception {
@@ -78,6 +88,7 @@ class MessageDispatcherBankData implements RequestHandler {
     }//eventLoop
 
     public static void main(String[] args) {
+        System.out.println();
         try {
 
             //for (int i = 0; i < 10; i++) {

@@ -42,7 +42,7 @@ public class TransactionController implements RequestHandler, Receiver {
         address = channel.getAddress();
     }
 
-    public void transaction(User u) {
+    public Object transaction(User u) {
         System.out.println("transaction");
         // TODO(lucasgb): Verificações
 
@@ -58,13 +58,19 @@ public class TransactionController implements RequestHandler, Receiver {
 
             var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
             if (list != null) {
+                if (list.getResults().contains(1) || list.getResults().contains(2) || list.getResults().contains(3)) {
+                    return "Erro: Faça essa operação mais tarde";
+                } else {
+                    return list;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return null;
     }
 
-    public void transfer(User u1, User u2, float value) {
+    public String transfer(User u1, User u2, float value) {
         System.out.println("transfer");
         // TODO(lucasgb): Verificações
         LockService lock_service = new LockService(channel);
@@ -73,37 +79,42 @@ public class TransactionController implements RequestHandler, Receiver {
             TransactionDao transactionDao = new TransactionDao();
             Transaction transaction = new Transaction();
 
-        try {
-            var options = new RequestOptions();
-            options.setMode(ResponseMode.GET_ALL);
-            options.setAnycasting(false);
-            options.SYNC();
+            try {
+                var options = new RequestOptions();
+                options.setMode(ResponseMode.GET_ALL);
+                options.setAnycasting(false);
+                options.SYNC();
 
-            HashMap<String, Object> hs = new HashMap();
-            hs.put("tipo", "TRANSFER");
-            hs.put("usuario1", u1);
-            hs.put("usuario2", u2);
-            hs.put("value", value);
-            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
-            if (list != null) {
-                Lock lock = lock_service.getLock("mylock"); // gets a cluster-wide lock
-                lock.lock();
-                try {
-                    //userDao.updateBalance(u1.getBalance().floatValue() - value);
-                    //userDao.updateBalance(u2.getBalance().floatValue() + value);
-                    transactionDao.save(transaction);
-                } finally {
-                    lock.unlock();
+                HashMap<String, Object> hs = new HashMap();
+                hs.put("tipo", "TRANSFER");
+                hs.put("usuario1", u1);
+                hs.put("usuario2", u2);
+                hs.put("value", value);
+                var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+                if (list != null) {
+                    Lock lock = lock_service.getLock("mylock"); // gets a cluster-wide lock
+                    lock.lock();
+                    try {
+                        if (list.getResults().contains(1) || list.getResults().contains(2) || list.getResults().contains(3)) {
+                            return "Erro: Faça essa operação mais tarde";
+                        } else {
+                            //userDao.updateBalance(u1.getBalance().floatValue() - value);
+                            //userDao.updateBalance(u2.getBalance().floatValue() + value);
+                            transactionDao.save(transaction);
+                        }
+                    } finally {
+                        lock.unlock();
+                    }
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return null;
     }
 
     // Mensagem recebida
@@ -120,6 +131,10 @@ public class TransactionController implements RequestHandler, Receiver {
     // Processar requisição síncrona
     @Override
     public Object handle(Message msg) throws Exception {
+        // 0 -> Sucesso
+        // 1 -> Usurio não existente
+        // 2 -> Dinheiro insuficiente
+        // 3 -> Operação não encontrada
         HashMap<String, Object> msgF = msg.getObject();
         if (msgF.get("tipo").equals("TRANSFER")) {
             User u1 = (User) msgF.get("usuario1");
@@ -129,13 +144,13 @@ public class TransactionController implements RequestHandler, Receiver {
             UserDao userDao = new UserDao();
             User user = userDao.find(u1.getId());
             if (user == null) {
-                return "Erro: Usurio não existente";
+                return 1;
             } else if (userDao.find(u2.getId()) == null) {
-                return "Erro: Usurio não existente";
+                return 1;
             } else if ((user.getBalance().floatValue() - value) < 0) {
-                return "Erro: Dinheiro insuficiente";
+                return 2;
             } else {
-                return "Sucesso";
+                return 0;
             }
         } else if (msgF.get("tipo").equals("TRANSACTIONS")) {
             User u = (User) msgF.get("usuario");
@@ -143,7 +158,7 @@ public class TransactionController implements RequestHandler, Receiver {
             User user = userDao.find(u.getId());
             TransactionDao transactionDao = new TransactionDao();
             if (user == null) {
-                return "Erro: Usurio não existente";
+                return 1;
             } else {
                 HashMap<String, Object> transfer = new HashMap();
                 transfer.put("Recebidos", transactionDao.findbyReceiverId(user.getId()));
@@ -151,7 +166,7 @@ public class TransactionController implements RequestHandler, Receiver {
                 return transfer;
             }
         }
-        return "Erro: Operação não encontrada";
+        return 3;
     }
 
     // Processar requisição assíncrona
