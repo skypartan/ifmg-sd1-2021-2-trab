@@ -120,8 +120,7 @@ public class UserController implements RequestHandler, Receiver {
     public Object handle(Message msg) throws Exception {
         HashMap msgF = msg.getObject();
         if (msgF.get("tipo").equals("NEW")) {
-            System.out.println(msgF.get("tipo"));
-            System.out.println(msgF.get("usuario") + " " + msgF.get("senha"));
+
         }
         else if (msgF.get("tipo").equals("LOGIN")) {
             HashMap<String, String> msgL = msg.getObject();

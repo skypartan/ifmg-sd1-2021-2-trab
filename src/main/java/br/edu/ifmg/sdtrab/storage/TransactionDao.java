@@ -54,6 +54,42 @@ public class TransactionDao {
         return transaction;
     }
 
+    public Transaction findbyReceiverId(int id) throws SQLException {
+        var sql = "select * from transaction where receiver_id = ?;";
+        var statement = connection.prepareStatement(sql);
+        statement.setInt(1, id);
+
+        var result = statement.executeQuery();
+        if (!result.first())
+            return null;
+
+        var transaction = new Transaction();
+        transaction.setId(result.getInt(1));
+        transaction.setSender(userDao.find(result.getInt(2)));
+        transaction.setReceiver(userDao.find(result.getInt(3)));
+        transaction.setValue(result.getBigDecimal(4));
+        transaction.setTime(result.getTimestamp(5));
+        return transaction;
+    }
+
+    public Transaction findbySenderId(int id) throws SQLException {
+        var sql = "select * from transaction where sender_id = ?;";
+        var statement = connection.prepareStatement(sql);
+        statement.setInt(1, id);
+
+        var result = statement.executeQuery();
+        if (!result.first())
+            return null;
+
+        var transaction = new Transaction();
+        transaction.setId(result.getInt(1));
+        transaction.setSender(userDao.find(result.getInt(2)));
+        transaction.setReceiver(userDao.find(result.getInt(3)));
+        transaction.setValue(result.getBigDecimal(4));
+        transaction.setTime(result.getTimestamp(5));
+        return transaction;
+    }
+
     public List<Transaction> search(String query) throws SQLException {
         var sql = "select * from transaction ?;";
         var statement = connection.prepareStatement(sql);
