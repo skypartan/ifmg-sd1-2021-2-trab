@@ -106,10 +106,8 @@ public class TransactionController implements RequestHandler, Receiver {
                         lock.unlock();
                     }
                 }
-            } catch (IOException e) {
+            } catch (IOException | SQLException e) {
                 e.printStackTrace();
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
             }
         } catch (Exception e) {
             e.printStackTrace();
