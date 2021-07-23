@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.util.Scanner;
 
 public class LoginCommand implements WindowCommand {
 
@@ -37,6 +38,22 @@ public class LoginCommand implements WindowCommand {
 
     @Override
     public void execute(String[] args, PrintStream stdout, InputStream stdin) {
-        stdout.println("Login executado");
+        stdout.println("Informe os dados: ");
+
+        var scan = new Scanner(stdin);
+
+        stdout.print("\tNome: ");
+        var name = scan.nextLine();
+        stdout.print("\tSenha: ");
+        var password = scan.nextLine();
+
+        var user = context.getUserController().authUser(name, password);
+        if (user != null) {
+            stdout.println("Usuário conectado");
+            context.setLoggedUser(user);
+        }
+        else {
+            stdout.println("Falha ao conectar");
+        }
     }
 }

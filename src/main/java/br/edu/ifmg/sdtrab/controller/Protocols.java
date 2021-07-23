@@ -24,6 +24,7 @@ public class Protocols {
 //                new TCPPING().setPortRange(1)
 //                        .setInitialHosts(Collections.singletonList(InetSocketAddress.createUnresolved(masterNodeAddress, 1580))),
 
+                new FRAG3(),
                 new BARRIER(), // Needed to transfer state; this will block messages that modify the shared state until a digest has been taken, then unblocks all threads.
                 new MERGE3(), // Merge sub-clusters into one cluster
                 new NAKACK2(), // Ensures FIFO and reliability

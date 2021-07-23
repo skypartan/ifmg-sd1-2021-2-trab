@@ -42,10 +42,10 @@ public class NewCommand implements WindowCommand {
 
         var user = context.getUserController().newUser(name, password);
         if (user != null) {
-            stdout.println("");
+            stdout.println("Usuário criado");
         }
         else {
-
+            stdout.println("Falha ao criar usuário");
         }
     }
 }

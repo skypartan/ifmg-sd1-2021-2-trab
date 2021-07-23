@@ -33,7 +33,10 @@ public class UserController implements RequestHandler, Receiver {
         channel.setReceiver(this);
         channel.connect("ebankUser");
         dispatcher = new MessageDispatcher(channel, this);
+        //lockService = new LockService(channel);
         address = channel.getAddress();
+
+        userDao = new UserDao();
     }
 
     public void close() {
@@ -41,16 +44,13 @@ public class UserController implements RequestHandler, Receiver {
     }
 
     public User newUser(String name, String password) {
-        System.out.println("newUser");
-        // TODO(lucasgb): Verificações
-
         try {
             var options = new RequestOptions();
             options.setMode(ResponseMode.GET_ALL);
             options.setAnycasting(false);
-            options.SYNC();
+            RequestOptions.SYNC();
 
-            HashMap<String, String> hs = new HashMap();
+            HashMap<String, String> hs = new HashMap<>();
             hs.put("tipo", "NEW");
             hs.put("usuario", name);
             hs.put("senha", password);
@@ -60,10 +60,16 @@ public class UserController implements RequestHandler, Receiver {
                 return null;
             }
             else {
-                User u = new User();
-                u.setName(name);
-                u.setPasswordHash(password);
-                userDao.save(u);
+                var status = (String) list.getFirst();
+                if (status.startsWith("FREE")) {
+                    User u = new User();
+                    u.setName(name);
+                    u.setPasswordHash(password);
+                    userDao.save(u);
+                }
+                else {
+                    System.out.println("Usuário já existe");
+                }
             }
         }
         catch (Exception e) {
@@ -73,40 +79,46 @@ public class UserController implements RequestHandler, Receiver {
         return null;
     }
 
-    public boolean authUser(String name, String password) {
-        System.out.println("newUser");
-        // TODO(lucasgb): Verificações
-
+    public User authUser(String name, String password) {
         try {
             var options = new RequestOptions();
             options.setMode(ResponseMode.GET_FIRST);
             options.setAnycasting(false);
             options.SYNC();
 
-            HashMap<String, String> hs = new HashMap();
-            hs.put("tipo", "NEW");
+            HashMap<String, Object> hs = new HashMap();
+            hs.put("tipo", "LOGIN");
             hs.put("usuario", name);
             hs.put("senha", password);
 
             var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
             if (list == null) {
-                return false;
+                return null;
             }
             else {
-
+                var status = (String) list.getFirst();
+                if (status.startsWith("AUTH falha")) {
+                    return null;
+                }
+                else if (status.startsWith("AUTH sucesso")) {
+                    return userDao.find(name);
+                }
+                else {
+                    return null;
+                }
             }
         }
         catch (Exception e) {
             e.printStackTrace();
         }
 
-        return false;
+        return null;
     }
 
     // Mensagem recebida
     @Override
     public void receive(Message msg) {
-        System.out.println(msg.getSrc() + ": " + msg.getObject());
+        //System.out.println(msg.getSrc() + ": " + msg.getObject());
     }
 
     // Mudança na estrutura de clientes conectados
@@ -117,45 +129,40 @@ public class UserController implements RequestHandler, Receiver {
     // Processar requisição síncrona
     @Override
     public Object handle(Message msg) throws Exception {
-        HashMap msgF = msg.getObject();
-        if (msgF.get("tipo").equals("NEW")) {
+        var action = (HashMap<String, Object>) msg.getObject();
+        var tipo = (String)  action.get("tipo");
+        var usuario = userDao.find((String) action.get("usuario"));
 
+        switch (tipo) {
+            case "NEW":
+                if (usuario != null)
+                    return "ERROR usuário já existe";
+                return "FREE";
+            case "LOGIN":
+                if (usuario != null) {
+                    var senha = (String) action.get("senha");
+                    if (!usuario.getPasswordHash().equals(senha))
+                        return "AUTH falha senha incorreta";
+                    else
+                        return "AUTH sucesso";
+                }
+                else
+                    return "AUTH falha usuário não encontrado";
+            case "BALANCE":
+                if (usuario != null) {
+                    return String.format("ACCOUNT %f", usuario.getBalance());
+                }
+                else
+                    return "AUTH falha usuário não encontrado";
+            default:
+                // do nothing
+                return null;
         }
-        else if (msgF.get("tipo").equals("LOGIN")) {
-            HashMap<String, String> msgL = msg.getObject();
-            String user = msgL.get("usuario");
-            String password = msgL.get("senha");
-            authUser(user, password);
-        }
-        else if (msgF.get("tipo").equals("BALACE")) {
-
-        }
-        else {
-
-        }
-        return null;
     }
 
     // Processar requisição assíncrona
     @Override
     public void handle(Message msg, Response response) throws Exception {
-        HashMap msgF = msg.getObject();
-        if (msgF.get("tipo").equals("NEW")) {
-            System.out.println(msgF.get("tipo"));
-            System.out.println(msgF.get("usuario") + " " + msgF.get("senha"));
-            response.send("Sucess", false);
-        }
-        else if (msgF.get("tipo").equals("LOGIN")) {
-            HashMap<String, String> msgL = msg.getObject();
-            String user = msgL.get("usuario");
-            String password = msgL.get("senha");
-            authUser(user, password);
-        }
-        else if (msgF.get("tipo").equals("BALACE")) {
-
-        }
-        else {
-
-        }
+        response.send(handle(msg), false);
     }
 }

@@ -2,7 +2,7 @@ use ebank;
 
 create table user (
     id int not null auto_increment,
-    name varchar(150) not null,
+    name varchar(150) not null unique,
     password varchar(300) not null,
     balance float not null,
 

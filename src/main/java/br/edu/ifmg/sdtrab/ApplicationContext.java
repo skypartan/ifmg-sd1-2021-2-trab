@@ -2,8 +2,11 @@ package br.edu.ifmg.sdtrab;
 
 import br.edu.ifmg.sdtrab.controller.TransactionController;
 import br.edu.ifmg.sdtrab.controller.UserController;
+import br.edu.ifmg.sdtrab.entity.User;
 
 public class ApplicationContext {
+
+    private User loggedUser;
 
     private UserController userController;
     private TransactionController transactionController;
@@ -36,6 +39,14 @@ public class ApplicationContext {
 
     public void setTransactionController(TransactionController transactionController) {
         this.transactionController = transactionController;
+    }
+
+    public User getLoggedUser() {
+        return loggedUser;
+    }
+
+    public void setLoggedUser(User loggedUser) {
+        this.loggedUser = loggedUser;
     }
 
     //</editor-fold>

@@ -61,6 +61,23 @@ public class UserDao {
         return user;
     }
 
+    public User find(String name) throws SQLException {
+        var sql = "select * from user where name = ?;";
+        var statement = connection.prepareStatement(sql);
+        statement.setString(1, name);
+
+        var result = statement.executeQuery();
+        if (!result.first())
+            return null;
+
+        var user = new User();
+        user.setId(result.getInt(1));
+        user.setName(result.getString(2));
+        user.setPasswordHash(result.getString(3));
+        user.setBalance(result.getBigDecimal(4));
+        return user;
+    }
+
     public List<User> search(String query) throws SQLException {
         var sql = "select * from user ?;";
         var statement = connection.prepareStatement(sql);
