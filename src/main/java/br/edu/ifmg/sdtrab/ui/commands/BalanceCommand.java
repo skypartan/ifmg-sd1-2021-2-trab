@@ -34,6 +34,15 @@ public class BalanceCommand implements WindowCommand {
 
     @Override
     public void execute(String[] args, PrintStream stdout, InputStream stdin) {
-        stdout.println("Saldo: ?");
+        if (context.getLoggedUser() == null) {
+            stdout.println("Primeiro conecte-se à sua conta");
+            return;
+        }
+
+        var balance = context.getUserController().balance(context.getLoggedUser().getName(), context.getLoggedUser().getPasswordHash());
+        if (balance == null)
+            stdout.println("Falha ao obter saldo");
+        else
+            stdout.println("Saldo: " + balance);
     }
 }

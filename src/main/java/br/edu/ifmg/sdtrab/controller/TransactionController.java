@@ -85,7 +85,7 @@ public class TransactionController implements RequestHandler, Receiver {
                 options.setAnycasting(false);
                 options.SYNC();
 
-                HashMap<String, Object> hs = new HashMap();
+                HashMap<String, Object> hs = new HashMap<>();
                 hs.put("tipo", "TRANSFER");
                 hs.put("usuario1", u1);
                 hs.put("usuario2", u2);

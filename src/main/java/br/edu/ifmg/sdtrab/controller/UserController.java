@@ -12,6 +12,7 @@ import org.jgroups.protocols.pbcast.STATE_TRANSFER;
 import org.jgroups.stack.Protocol;
 import org.jgroups.util.Util;
 
+import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -115,6 +116,39 @@ public class UserController implements RequestHandler, Receiver {
         return null;
     }
 
+    public BigDecimal balance(String name, String password) {
+        try {
+            var options = new RequestOptions();
+            options.setMode(ResponseMode.GET_FIRST);
+            options.setAnycasting(false);
+            options.SYNC();
+
+            HashMap<String, Object> hs = new HashMap();
+            hs.put("tipo", "BALANCE");
+            hs.put("usuario", name);
+            hs.put("senha", password);
+
+            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            if (list == null) {
+                return null;
+            }
+            else {
+                var status = (String) list.getFirst();
+                if (status.startsWith("ACCOUNT falha")) {
+                    return null;
+                }
+                else {
+                    return BigDecimal.valueOf(Double.parseDouble(status.replace("ACCOUNT ", "").replace(",", ".")));
+                }
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
     // Mensagem recebida
     @Override
     public void receive(Message msg) {
@@ -153,7 +187,7 @@ public class UserController implements RequestHandler, Receiver {
                     return String.format("ACCOUNT %f", usuario.getBalance());
                 }
                 else
-                    return "AUTH falha usuário não encontrado";
+                    return "ACCOUNT falha usuário não encontrado";
             default:
                 // do nothing
                 return null;
