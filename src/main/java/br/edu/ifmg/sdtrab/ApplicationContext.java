@@ -13,12 +13,13 @@ public class ApplicationContext {
 
     public ApplicationContext() {
         userController = new UserController();
-
+        transactionController = new TransactionController();
         // TODO(lucasgb): Enviar requisição de download do estado atual do sistema
     }
 
     public void init() throws Exception {
         userController.init();
+        transactionController.init();
     }
 
 

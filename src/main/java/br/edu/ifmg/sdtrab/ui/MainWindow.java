@@ -1,10 +1,7 @@
 package br.edu.ifmg.sdtrab.ui;
 
 import br.edu.ifmg.sdtrab.ApplicationContext;
-import br.edu.ifmg.sdtrab.ui.commands.BalanceCommand;
-import br.edu.ifmg.sdtrab.ui.commands.HelpCommand;
-import br.edu.ifmg.sdtrab.ui.commands.LoginCommand;
-import br.edu.ifmg.sdtrab.ui.commands.NewCommand;
+import br.edu.ifmg.sdtrab.ui.commands.*;
 import br.edu.ifmg.sdtrab.util.CommandBuilder;
 
 import java.lang.reflect.InvocationTargetException;
@@ -74,6 +71,16 @@ public class MainWindow {
 
         new CommandBuilder(context)
                 .type(BalanceCommand.class)
+                .registry(commands)
+                .build();
+
+        new CommandBuilder(context)
+                .type(TransationCommand.class)
+                .registry(commands)
+                .build();
+
+        new CommandBuilder(context)
+                .type(TransferCommand.class)
                 .registry(commands)
                 .build();
     }

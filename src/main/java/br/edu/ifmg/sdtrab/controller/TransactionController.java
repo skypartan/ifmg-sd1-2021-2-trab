@@ -15,9 +15,13 @@ import org.jgroups.protocols.pbcast.STATE_TRANSFER;
 import org.jgroups.stack.Protocol;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.locks.Lock;
 
@@ -43,14 +47,13 @@ public class TransactionController implements RequestHandler, Receiver {
     }
 
     public Object transaction(User u) {
-        System.out.println("transaction");
         // TODO(lucasgb): Verificações
 
         try {
             var options = new RequestOptions();
             options.setMode(ResponseMode.GET_FIRST);
             options.setAnycasting(false);
-            options.ASYNC();
+            options.SYNC();
 
             HashMap<String, Object> hs = new HashMap();
             hs.put("tipo", "TRANSACTIONS");
@@ -58,10 +61,10 @@ public class TransactionController implements RequestHandler, Receiver {
 
             var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
             if (list != null) {
-                if (list.getResults().contains(1) || list.getResults().contains(2) || list.getResults().contains(3)) {
-                    return "Erro: Faça essa operação mais tarde";
+                if (list.getResults().contains(3)) {
+                    return null;
                 } else {
-                    return list;
+                    return list.getResults();
                 }
             }
         } catch (Exception e) {
@@ -70,41 +73,54 @@ public class TransactionController implements RequestHandler, Receiver {
         return null;
     }
 
-    public String transfer(User u1, User u2, float value) {
-        System.out.println("transfer");
+    public String transfer(User u1, String u2, float value) {
+        //System.out.println("transfer");
         // TODO(lucasgb): Verificações
-        LockService lock_service = new LockService(channel);
         try {
             UserDao userDao = new UserDao();
             TransactionDao transactionDao = new TransactionDao();
             Transaction transaction = new Transaction();
-
+            User user2 = userDao.find(u2);
+            if (user2 == null) {
+                return null;
+            }
             try {
                 var options = new RequestOptions();
                 options.setMode(ResponseMode.GET_ALL);
                 options.setAnycasting(false);
                 options.SYNC();
+                transaction.setSender(u1);
+                transaction.setReceiver(user2);
+                transaction.setValue(BigDecimal.valueOf(value));
+                transaction.setTime(new Timestamp(System.currentTimeMillis()));
 
                 HashMap<String, Object> hs = new HashMap<>();
                 hs.put("tipo", "TRANSFER");
                 hs.put("usuario1", u1);
-                hs.put("usuario2", u2);
+                hs.put("usuario2", user2);
                 hs.put("value", value);
-                var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
-                if (list != null) {
-                    Lock lock = lock_service.getLock("mylock"); // gets a cluster-wide lock
-                    lock.lock();
-                    try {
-                        if (list.getResults().contains(1) || list.getResults().contains(2) || list.getResults().contains(3)) {
-                            return "Erro: Faça essa operação mais tarde";
+                Lock lock = lockService.getLock("lockTrans"); // gets a cluster-wide lock
+                lock.lock();
+                try {
+                    var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+                    if (list != null) {
+
+                        if (list.getResults().contains(1)) {
+                            return "Erro: Usuario não encotrado";
+                        } else if (list.getResults().contains(2)) {
+                            return "Erro: Dinheiro insuficiente";
+                        } else if (list.getResults().contains(3)) {
+                            return "Erro: Operação inexitente";
                         } else {
                             userDao.update(u1, u1.getBalance().floatValue() - value);
-                            userDao.update(u2, u2.getBalance().floatValue() + value);
+                            userDao.update(user2, user2.getBalance().floatValue() + value);
                             transactionDao.save(transaction);
+                            return "Traferencia Realizada com Sucesso";
                         }
-                    } finally {
-                        lock.unlock();
+
                     }
+                } finally {
+                    lock.unlock();
                 }
             } catch (IOException | SQLException e) {
                 e.printStackTrace();
@@ -137,7 +153,6 @@ public class TransactionController implements RequestHandler, Receiver {
         if (msgF.get("tipo").equals("TRANSFER")) {
             User u1 = (User) msgF.get("usuario1");
             User u2 = (User) msgF.get("usuario2");
-
             float value = (float) msgF.get("value");
             UserDao userDao = new UserDao();
             User user = userDao.find(u1.getId());
@@ -152,17 +167,11 @@ public class TransactionController implements RequestHandler, Receiver {
             }
         } else if (msgF.get("tipo").equals("TRANSACTIONS")) {
             User u = (User) msgF.get("usuario");
-            UserDao userDao = new UserDao();
-            User user = userDao.find(u.getId());
             TransactionDao transactionDao = new TransactionDao();
-            if (user == null) {
-                return 1;
-            } else {
-                HashMap<String, Object> transfer = new HashMap();
-                transfer.put("Recebidos", transactionDao.findbyReceiverId(user.getId()));
-                transfer.put("Enviados", transactionDao.findbySenderId(user.getId()));
-                return transfer;
-            }
+            HashMap<String, ArrayList<Transaction>> transfer = new HashMap();
+            transfer.put("Recebidos", transactionDao.findbyReceiverId(u.getId()));
+            transfer.put("Enviados", transactionDao.findbySenderId(u.getId()));
+            return transfer;
         }
         return 3;
     }
@@ -188,18 +197,14 @@ public class TransactionController implements RequestHandler, Receiver {
                 response.send("Sucesso", false);
             }
         } else if (msgF.get("tipo").equals("TRANSACTIONS")) {
+
             User u = (User) msgF.get("usuario");
-            UserDao userDao = new UserDao();
-            User user = userDao.find(u.getId());
             TransactionDao transactionDao = new TransactionDao();
-            if (user == null) {
-                response.send("Erro: Usurio não existente", true);
-            } else {
-                HashMap<String, Object> transfer = new HashMap();
-                transfer.put("Recebidos", transactionDao.findbyReceiverId(user.getId()));
-                transfer.put("Enviados", transactionDao.findbySenderId(user.getId()));
-                response.send(transfer, false);
-            }
+            HashMap<String, Object> transfer = new HashMap();
+            transfer.put("Recebidos", transactionDao.findbyReceiverId(u.getId()));
+            transfer.put("Enviados", transactionDao.findbySenderId(u.getId()));
+            response.send(transfer, false);
+
         }
         response.send("Erro: Operação não encontrada", true);
     }

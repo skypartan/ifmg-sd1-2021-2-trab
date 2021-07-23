@@ -54,40 +54,43 @@ public class TransactionDao {
         return transaction;
     }
 
-    public Transaction findbyReceiverId(int id) throws SQLException {
+    public ArrayList<Transaction> findbyReceiverId(int id) throws SQLException {
         var sql = "select * from transaction where receiver_id = ?;";
         var statement = connection.prepareStatement(sql);
         statement.setInt(1, id);
-
-        var result = statement.executeQuery();
-        if (!result.first())
-            return null;
-
+        var list = new ArrayList<Transaction>();
         var transaction = new Transaction();
-        transaction.setId(result.getInt(1));
-        transaction.setSender(userDao.find(result.getInt(2)));
-        transaction.setReceiver(userDao.find(result.getInt(3)));
-        transaction.setValue(result.getBigDecimal(4));
-        transaction.setTime(result.getTimestamp(5));
-        return transaction;
+        var result = statement.executeQuery();
+
+        while (result.next()) {
+            transaction.setId(result.getInt(1));
+            transaction.setSender(userDao.find(result.getInt(2)));
+            transaction.setReceiver(userDao.find(result.getInt(3)));
+            transaction.setValue(result.getBigDecimal(4));
+            transaction.setTime(result.getTimestamp(5));
+            list.add(transaction);
+        }
+        return list;
     }
 
-    public Transaction findbySenderId(int id) throws SQLException {
+    public ArrayList<Transaction> findbySenderId(int id) throws SQLException {
         var sql = "select * from transaction where sender_id = ?;";
         var statement = connection.prepareStatement(sql);
         statement.setInt(1, id);
-
-        var result = statement.executeQuery();
-        if (!result.first())
-            return null;
-
+        var list = new ArrayList<Transaction>();
         var transaction = new Transaction();
-        transaction.setId(result.getInt(1));
-        transaction.setSender(userDao.find(result.getInt(2)));
-        transaction.setReceiver(userDao.find(result.getInt(3)));
-        transaction.setValue(result.getBigDecimal(4));
-        transaction.setTime(result.getTimestamp(5));
-        return transaction;
+        var result = statement.executeQuery();
+
+
+        while (result.next()) {
+            transaction.setId(result.getInt(1));
+            transaction.setSender(userDao.find(result.getInt(2)));
+            transaction.setReceiver(userDao.find(result.getInt(3)));
+            transaction.setValue(result.getBigDecimal(4));
+            transaction.setTime(result.getTimestamp(5));
+            list.add(transaction);
+        }
+        return list;
     }
 
     public List<Transaction> search(String query) throws SQLException {

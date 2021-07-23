@@ -34,7 +34,9 @@ public class Protocols {
                 new UFC(), // Unicast flow control
                 new MFC(), // Multicast flow control
                 new STATE_TRANSFER(), // Ensures correct state transfers
-                //new CENTRAL_LOCK2()
+                new CENTRAL_LOCK2(),
+                new CENTRAL_LOCK()
+
         };
     }
 }
