@@ -1,23 +1,19 @@
 package br.edu.ifmg.sdtrab.communication;
 
 import br.edu.ifmg.sdtrab.controller.Protocols;
-import br.edu.ifmg.sdtrab.entity.User;
 import org.jgroups.*;
 import org.jgroups.blocks.*;
+import org.jgroups.blocks.cs.ReceiverAdapter;
 import org.jgroups.blocks.locking.LockService;
+import org.jgroups.tests.Probe;
 import org.jgroups.util.RspList;
 import org.jgroups.util.Util;
 
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Random;
-import java.util.Scanner;
-import java.util.concurrent.locks.Lock;
-
-import static java.lang.Boolean.FALSE;
 
 
-class MessageDispatcherBankData implements RequestHandler {
+class MessageDispatcherBankData implements RequestHandler, Receiver {
     JChannel channel;
     MessageDispatcher disp;
     RspList rsp_list;
@@ -26,9 +22,9 @@ class MessageDispatcherBankData implements RequestHandler {
 
     public void start(boolean isMensage, HashMap<String, String> h, RequestOptions opcoes) throws Exception {
         channel = new JChannel(new Protocols().channelProtocols());
+        channel.setReceiver(this);
         disp = new MessageDispatcher(channel, this);
         channel.connect("MessageDispatcherTestGroup");
-
         if (isMensage) {
             mensagem(h, opcoes);
         } else {
@@ -40,24 +36,35 @@ class MessageDispatcherBankData implements RequestHandler {
         //}
     }
 
+    // Mensagem recebida
+    @Override
+    public void receive(Message msg) {
+        System.out.println(msg.getSrc() + ": " + msg.getObject());
+    }
+
+    // Mudança na estrutura de clientes conectados
+    public void viewAccepted(View new_view) {
+        System.out.println("** view: " + new_view);
+    }
+
     public String mensagem(HashMap h, RequestOptions opcoes) throws Exception {
 
-        ObjectMessage msg = new ObjectMessage(null).setObject(h);
-        lock_service = new LockService(channel);
-        Lock lock = lock_service.getLock("mylock"); // gets a cluster-wide lock
+        //ObjectMessage msg = new ObjectMessage(null).setObject(h);
+        //lock_service = new LockService(channel);
+        //Lock lock = lock_service.getLock("mylock"); // gets a cluster-wide lock
 
         rsp_list = disp.castMessage(null,
-                msg,
+                new ObjectMessage(null, h),
                 opcoes);
-        lock.lock();
-        try {
-            if (rsp_list.getResults().contains(1) || rsp_list.getResults().contains(2) || rsp_list.getResults().contains(3)) {
-                System.out.println("ERRO");
-            }
-                System.out.println("Responses:\n" + rsp_list.getResults());
-        } finally {
-            lock.unlock();
+        //lock.lock();
+        // try {
+        if (rsp_list.getResults().contains(1) || rsp_list.getResults().contains(2) || rsp_list.getResults().contains(3)) {
+            System.out.println("ERRO");
         }
+        System.out.println("Responses:\n" + rsp_list);
+        //  } finally {
+        //     lock.unlock();
+        //}
         return "";
     }
 
@@ -65,6 +72,7 @@ class MessageDispatcherBankData implements RequestHandler {
     public Object handle(org.jgroups.Message msg) throws Exception {
 
         HashMap msgF = msg.getObject();
+
         if (msgF.get("tipo").equals("NEW")) {
             System.out.println(msgF.get("tipo"));
             System.out.println(msgF.get("usuario") + " " + msgF.get("senha"));
@@ -109,7 +117,7 @@ class MessageDispatcherBankData implements RequestHandler {
             opcoes.setAnycasting(false);
             System.out.println("Casting message #" + 0);
             opcoes.SYNC();
-            new MessageDispatcherBankData().start(true, test, opcoes);
+            new MessageDispatcherBankData().start(false, test, opcoes);
             //  }
         } catch (Exception e) {
             System.err.println(e);

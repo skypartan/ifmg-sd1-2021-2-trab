@@ -157,7 +157,7 @@ public class UserController implements RequestHandler, Receiver {
 
     // Mudança na estrutura de clientes conectados
     public void viewAccepted(View new_view) {
-        //System.out.println("** view: " + new_view);
+        System.out.println("** view user: " + new_view);
     }
 
     // Processar requisição síncrona
