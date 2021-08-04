@@ -1,53 +1,51 @@
 package br.edu.ifmg.sdtrab;
 
-import br.edu.ifmg.sdtrab.controller.TransactionController;
-import br.edu.ifmg.sdtrab.controller.UserController;
+import br.edu.ifmg.sdtrab.controller.*;
 import br.edu.ifmg.sdtrab.entity.User;
 
 public class ApplicationContext {
 
+    private boolean worker;
+
     private User loggedUser;
 
-    private UserController userController;
-    private TransactionController transactionController;
+    private NodeController nodeController;
+    private ClientController clientController;
+    private ControlController controlController;
+    private StorageController storageController;
 
-    public ApplicationContext() {
-        userController = new UserController();
-        transactionController = new TransactionController();
-        // TODO(lucasgb): Enviar requisição de download do estado atual do sistema
+    public ApplicationContext(boolean worker) {
+        this.worker = worker;
+
+        nodeController = new NodeController(this);
     }
 
     public void init() throws Exception {
-        userController.init();
-        transactionController.init();
+        nodeController.init();
+
+        if (nodeController.getRole() == NodeController.NodeRole.CONTROL_CONTROLLER)
+            controlController.initRole();
+        else if (nodeController.getRole() == NodeController.NodeRole.STORAGE_CONTROLLER)
+            storageController.initRole();
+        else
+            clientController.initRole();
     }
 
 
 
     //<editor-fold desc="Getters e Setters">
 
-    public UserController getUserController() {
-        return userController;
+
+    public boolean isWorker() {
+        return worker;
     }
 
-    public void setUserController(UserController userController) {
-        this.userController = userController;
+    public NodeController getNodeController() {
+        return nodeController;
     }
 
-    public TransactionController getTransactionController() {
-        return transactionController;
-    }
-
-    public void setTransactionController(TransactionController transactionController) {
-        this.transactionController = transactionController;
-    }
-
-    public User getLoggedUser() {
-        return loggedUser;
-    }
-
-    public void setLoggedUser(User loggedUser) {
-        this.loggedUser = loggedUser;
+    public void setNodeController(NodeController nodeController) {
+        this.nodeController = nodeController;
     }
 
     //</editor-fold>

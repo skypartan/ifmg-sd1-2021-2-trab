@@ -2,19 +2,13 @@ package br.edu.ifmg.sdtrab.controller;
 
 import br.edu.ifmg.sdtrab.entity.User;
 import br.edu.ifmg.sdtrab.storage.UserDao;
+import br.edu.ifmg.sdtrab.util.ProtocolUtil;
 import org.jgroups.*;
 import org.jgroups.blocks.*;
 import org.jgroups.blocks.locking.LockService;
-import org.jgroups.protocols.*;
-import org.jgroups.protocols.pbcast.GMS;
-import org.jgroups.protocols.pbcast.NAKACK2;
-import org.jgroups.protocols.pbcast.STATE_TRANSFER;
-import org.jgroups.stack.Protocol;
 import org.jgroups.util.Util;
 
 import java.math.BigDecimal;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.HashMap;
 
 public class UserController implements RequestHandler, Receiver {
@@ -30,7 +24,7 @@ public class UserController implements RequestHandler, Receiver {
     }
 
     public void init() throws Exception {
-        channel = new JChannel(new Protocols().channelProtocols());
+        channel = new JChannel(new ProtocolUtil().channelProtocols());
         channel.setReceiver(this);
         channel.connect("ebankUser");
         dispatcher = new MessageDispatcher(channel, this);
@@ -85,7 +79,7 @@ public class UserController implements RequestHandler, Receiver {
             var options = new RequestOptions();
             options.setMode(ResponseMode.GET_FIRST);
             options.setAnycasting(false);
-            options.SYNC();
+            RequestOptions.SYNC();
 
             HashMap<String, Object> hs = new HashMap();
             hs.put("tipo", "LOGIN");

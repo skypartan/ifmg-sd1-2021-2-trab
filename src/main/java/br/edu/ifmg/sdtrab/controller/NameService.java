@@ -1,7 +1,7 @@
 package br.edu.ifmg.sdtrab.controller;
 
-import br.edu.ifmg.sdtrab.entity.User;
 import br.edu.ifmg.sdtrab.storage.TransactionDao;
+import br.edu.ifmg.sdtrab.util.ProtocolUtil;
 import org.jgroups.*;
 import org.jgroups.blocks.*;
 import org.jgroups.blocks.locking.LockService;
@@ -20,7 +20,7 @@ public class NameService implements RequestHandler, Receiver {
     }
 
     public void init() throws Exception {
-        channel = new JChannel(new Protocols().channelProtocols());
+        channel = new JChannel(new ProtocolUtil().channelProtocols());
         channel.setReceiver(this);
         channel.connect("ebankName");
         dispatcher = new MessageDispatcher(channel, this);

@@ -5,14 +5,29 @@ import br.edu.ifmg.sdtrab.ui.MainWindow;
 public class Program {
 
     public static void main(String[] args) {
-        new Thread(() -> {
-            try {
-                new MainWindow();
+        if (args.length < 2) {
+            System.err.println("Informe se é client ou server");
+            System.exit(1);
+        }
+
+        boolean worker = true;
+        if (args[1].equals("client"))
+            worker = false;
+
+        var context = new ApplicationContext(worker);
+        try {
+            context.init();
+
+            if (worker) {
+
             }
-            catch (Exception e) {
-                e.printStackTrace();
-                System.exit(1);
+            else {
+                new MainWindow(context);
             }
-        }).start();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 }

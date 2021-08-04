@@ -1,4 +1,4 @@
-package br.edu.ifmg.sdtrab.controller;
+package br.edu.ifmg.sdtrab.util;
 
 import org.jgroups.protocols.*;
 import org.jgroups.protocols.pbcast.GMS;
@@ -9,8 +9,9 @@ import org.jgroups.stack.Protocol;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class Protocols {
-    public Protocol[] channelProtocols() throws UnknownHostException {
+public class ProtocolUtil {
+
+    public static Protocol[] channelProtocols() throws UnknownHostException {
         var masterNodeAddress = System.getenv("MASTER_NODE_HOST");
 
         return new Protocol[]{

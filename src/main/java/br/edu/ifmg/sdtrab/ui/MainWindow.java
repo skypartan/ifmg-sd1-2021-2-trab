@@ -16,9 +16,10 @@ public class MainWindow {
     private boolean running = true;
     private final Scanner scanner = new Scanner(System.in);
 
-    public MainWindow() throws Exception {
-        registerCommands();
+    public MainWindow(ApplicationContext context) throws Exception {
+        this.context = context;
 
+        registerCommands();
         windowLoop();
     }
 
@@ -50,9 +51,6 @@ public class MainWindow {
     }
 
     public void registerCommands() throws Exception {
-
-        context = new ApplicationContext();
-        context.init();
 
         new CommandBuilder(context)
                 .type(HelpCommand.class)

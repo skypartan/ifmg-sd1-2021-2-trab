@@ -1,9 +1,8 @@
 package br.edu.ifmg.sdtrab.communication;
 
-import br.edu.ifmg.sdtrab.controller.Protocols;
+import br.edu.ifmg.sdtrab.util.ProtocolUtil;
 import org.jgroups.*;
 import org.jgroups.blocks.*;
-import org.jgroups.blocks.cs.ReceiverAdapter;
 import org.jgroups.blocks.locking.LockService;
 import org.jgroups.protocols.RATE_LIMITER;
 import org.jgroups.tests.Probe;
@@ -22,7 +21,7 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
     LockService lock_service;
 
     public void start(boolean isMensage, HashMap<String, String> h, RequestOptions opcoes) throws Exception {
-        channel = new JChannel(new Protocols().channelProtocols());
+        channel = new JChannel(new ProtocolUtil().channelProtocols());
         channel.setReceiver(this);
         disp = new MessageDispatcher(channel, this);
         channel.connect("MessageDispatcherTestGroup");
