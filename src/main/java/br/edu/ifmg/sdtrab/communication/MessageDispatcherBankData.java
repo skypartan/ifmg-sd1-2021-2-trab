@@ -62,6 +62,13 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
             System.out.println("ERRO");
         }
         System.out.println("Responses:\n" + rsp_list);
+
+       // while(rsp_list.iterator().hasNext()) {
+            Object element = rsp_list.toString();
+            System.out.print(rsp_list.toString().split(":")[0].replace("[", "") + " ");
+            System.out.print(rsp_list.get(rsp_list.toString().split(":")[0].replace("[", ""))+ " ");
+
+        //}
         //  } finally {
         //     lock.unlock();
         //}
@@ -117,7 +124,7 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
             opcoes.setAnycasting(false);
             System.out.println("Casting message #" + 0);
             opcoes.SYNC();
-            new MessageDispatcherBankData().start(false, test, opcoes);
+            new MessageDispatcherBankData().start(true, test, opcoes);
             //  }
         } catch (Exception e) {
             System.err.println(e);

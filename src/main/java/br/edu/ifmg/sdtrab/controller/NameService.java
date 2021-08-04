@@ -22,7 +22,7 @@ public class NameService implements RequestHandler, Receiver {
     public void init() throws Exception {
         channel = new JChannel(new Protocols().channelProtocols());
         channel.setReceiver(this);
-        channel.connect("ebankTransaction");
+        channel.connect("ebankName");
         dispatcher = new MessageDispatcher(channel, this);
         lockService = new LockService(channel);
         address = channel.getAddress();
