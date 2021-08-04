@@ -55,7 +55,7 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
         //ObjectMessage msg = new ObjectMessage(null).setObject(h);
         //lock_service = new LockService(channel);
         //Lock lock = lock_service.getLock("mylock"); // gets a cluster-wide lock
-
+        System.out.println(channel.getAddressAsString());
         rsp_list = disp.castMessage(null,
                 new ObjectMessage(null, h),
                 opcoes);
@@ -81,7 +81,7 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
     @Override
     public Object handle(org.jgroups.Message msg) throws Exception {
         HashMap msgF = msg.getObject();
-
+        System.out.println(msg.getSrc());
         if (msgF.get("tipo").equals("NEW")) {
             System.out.println(msgF.get("tipo"));
             System.out.println(msgF.get("usuario") + " " + msgF.get("senha"));
