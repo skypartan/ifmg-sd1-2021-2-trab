@@ -69,6 +69,7 @@ public class NodeController implements Receiver, RequestHandler {
         else { // Node pode-se conectar à rede de um coordenador
 
             // Conectar-se a ambos os controles e decidir sob qual operar
+            //response.getSuspectedMembers().
 
             // Iniciar controller de acordo com controlador que se conectou
 //            storageController.initRole();
@@ -76,12 +77,8 @@ public class NodeController implements Receiver, RequestHandler {
         }
     }
 
-    public Address getControllerNode() {
-        return null;
-    }
+    public void changeRole(NodeRole newRole) {
 
-    public Address getDataNode() {
-        return null;
     }
 
 
