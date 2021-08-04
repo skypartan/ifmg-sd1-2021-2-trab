@@ -35,8 +35,9 @@ public class Protocols {
                 new MFC(), // Multicast flow control
                 new STATE_TRANSFER(), // Ensures correct state transfers
                 new CENTRAL_LOCK2(),
-                new CENTRAL_LOCK()
-                //new SYM_ENCRYPT()
+                new CENTRAL_LOCK(),
+                new RATE_LIMITER(),
+                //new ASYM_ENCRYPT()
 
         };
     }

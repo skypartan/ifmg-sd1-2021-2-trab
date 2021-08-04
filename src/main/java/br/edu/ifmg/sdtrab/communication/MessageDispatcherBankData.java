@@ -5,6 +5,7 @@ import org.jgroups.*;
 import org.jgroups.blocks.*;
 import org.jgroups.blocks.cs.ReceiverAdapter;
 import org.jgroups.blocks.locking.LockService;
+import org.jgroups.protocols.RATE_LIMITER;
 import org.jgroups.tests.Probe;
 import org.jgroups.util.RspList;
 import org.jgroups.util.Util;
@@ -25,6 +26,9 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
         channel.setReceiver(this);
         disp = new MessageDispatcher(channel, this);
         channel.connect("MessageDispatcherTestGroup");
+        RATE_LIMITER rate = new RATE_LIMITER();
+        rate.setMaxBytes(50);
+        rate.setTimePeriod(1000);
         if (isMensage) {
             mensagem(h, opcoes);
         } else {
@@ -77,7 +81,6 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
 
     @Override
     public Object handle(org.jgroups.Message msg) throws Exception {
-
         HashMap msgF = msg.getObject();
 
         if (msgF.get("tipo").equals("NEW")) {

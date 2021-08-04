@@ -83,5 +83,10 @@ public class MainWindow {
                 .type(TransferCommand.class)
                 .registry(commands)
                 .build();
+
+//        new CommandBuilder(context)
+//                .type(MontateCommand.class)
+//                .registry(commands)
+//                .build();
     }
 }
