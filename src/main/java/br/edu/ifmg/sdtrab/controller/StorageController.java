@@ -239,11 +239,11 @@ public class StorageController implements RequestHandler, Receiver {
     public Object handle(Message msg) throws Exception {
         TransactionSqliteDao transactionDao = new TransactionSqliteDao();
         UserSqliteDao userDao = new UserSqliteDao();
-        Transaction transaction = new Transaction();
         var action = (HashMap<String, Object>) msg.getObject();
         var tipo = (String) action.get("tipo");
         switch (tipo) {
             case "TRANSFER":
+                Transaction transaction = new Transaction();
                 String u2 = (String) action.get("usuario2");
                 User u1 = (User) action.get("usuario1");
 
@@ -265,7 +265,7 @@ public class StorageController implements RequestHandler, Receiver {
 
                 if (user1 == null) {
                     return 1;
-                } else if (userDao.find(user2.getId(), msg.getSrc().toString()) == null) {
+                } else if (userDao.find(user2.getId(), this.channel.getAddressAsString()) == null) {
                     return 1;
                 } else if ((user1.getBalance().floatValue() - value) < 0) {
                     return 2;
@@ -278,8 +278,8 @@ public class StorageController implements RequestHandler, Receiver {
             case "TRANSACTIONS":
                 User u = (User) action.get("usuario");
                 HashMap<String, ArrayList<Transaction>> transfer = new HashMap();
-                transfer.put("Recebidos", transactionDao.findbyReceiverId(u.getId(), msg.getSrc().toString()));
-                transfer.put("Enviados", transactionDao.findbySenderId(u.getId(), msg.getSrc().toString()));
+                transfer.put("Recebidos", transactionDao.findbyReceiverId(u.getId(), this.channel.getAddressAsString()));
+                transfer.put("Enviados", transactionDao.findbySenderId(u.getId(), this.channel.getAddressAsString()));
                 return transfer;
 
             case "NEW":
