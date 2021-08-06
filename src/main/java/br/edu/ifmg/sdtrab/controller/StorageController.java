@@ -13,6 +13,8 @@ import org.jgroups.blocks.RequestHandler;
 import org.jgroups.blocks.RequestOptions;
 import org.jgroups.blocks.ResponseMode;
 import org.jgroups.blocks.locking.LockService;
+import org.jgroups.protocols.RATE_LIMITER;
+import org.jgroups.stack.Protocol;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,7 +53,8 @@ public class StorageController implements RequestHandler, Receiver {
 
             var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
             if (list != null) {
-                if (list.getResults().contains(3)) {
+                var status = (Integer) list.getFirst();
+                if (status == 3) {
                     return null;
                 } else {
                     return list.getResults();
@@ -67,7 +70,7 @@ public class StorageController implements RequestHandler, Receiver {
         //System.out.println("transfer");
         // TODO(lucasgb): Verificações
         try {
-           // User user2 = userDao.find(u2, channel.getAddressAsString());
+            // User user2 = userDao.find(u2, channel.getAddressAsString());
             try {
                 var options = new RequestOptions();
                 options.setMode(ResponseMode.GET_ALL);
@@ -108,12 +111,110 @@ public class StorageController implements RequestHandler, Receiver {
         return null;
     }
 
-    public void initRole() throws Exception{
-        channel = new JChannel(new ProtocolUtil().channelProtocols());
+    public User newUser(String name, String password) {
+        try {
+            var options = new RequestOptions();
+            options.setMode(ResponseMode.GET_ALL);
+            options.setAnycasting(false);
+            RequestOptions.SYNC();
+
+            HashMap<String, String> hs = new HashMap<>();
+            hs.put("tipo", "NEW");
+            hs.put("usuario", name);
+            hs.put("senha", password);
+
+            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            if (list == null) {
+                return null;
+            } else {
+                var status = (String) list.getFirst();
+                if (status.startsWith("FREE")) {
+                    User u = new User();
+                    u.setName(name);
+                    u.setPasswordHash(password);
+
+                } else {
+                    System.out.println("Usuário já existe");
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public User authUser(String name, String password) {
+        try {
+            var options = new RequestOptions();
+            options.setMode(ResponseMode.GET_FIRST);
+            options.setAnycasting(false);
+            RequestOptions.SYNC();
+
+            HashMap<String, Object> hs = new HashMap();
+            hs.put("tipo", "LOGIN");
+            hs.put("usuario", name);
+            hs.put("senha", password);
+            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            if (list == null) {
+                return null;
+            } else {
+                var status = (Object) list.getFirst();
+                if (status.toString().startsWith("AUTH falha")) {
+                    return null;
+                } else if (status.equals(3)) {
+                    return null;
+                } else {
+                    return (User) status;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public BigDecimal balance(String name, String password) {
+        try {
+            var options = new RequestOptions();
+            options.setMode(ResponseMode.GET_FIRST);
+            options.setAnycasting(false);
+            options.SYNC();
+
+            HashMap<String, Object> hs = new HashMap();
+            hs.put("tipo", "BALANCE");
+            hs.put("usuario", name);
+            hs.put("senha", password);
+
+            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            if (list == null) {
+                return null;
+            } else {
+                var status = (String) list.getFirst();
+                if (status.startsWith("ACCOUNT falha")) {
+                    return null;
+                } else {
+                    return BigDecimal.valueOf(Double.parseDouble(status.replace("ACCOUNT ", "").replace(",", ".")));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public void initRole() throws Exception {
+        Protocol[] p = new ProtocolUtil().channelProtocols();
+        channel = new JChannel(p);
         channel.setReceiver(this);
         channel.connect("ebankData");
         dispatcher = new MessageDispatcher(channel, this);
         lockService = new LockService(channel);
+        RATE_LIMITER rate = (RATE_LIMITER) p[14];
+        rate.setMaxBytes(200);
+        rate.setTimePeriod(1000);
         address = channel.getAddress();
     }
 
@@ -140,48 +241,79 @@ public class StorageController implements RequestHandler, Receiver {
 
     @Override
     public Object handle(Message msg) throws Exception {
-        HashMap<String, Object> msgF = msg.getObject();
         Transaction transaction = new Transaction();
+        var action = (HashMap<String, Object>) msg.getObject();
+        var tipo = (String) action.get("tipo");
+        switch (tipo) {
+            case "TRANSFER":
+                String u2 = (String) action.get("usuario2");
+                User u1 = (User) action.get("usuario1");
 
-        if (msgF.get("tipo").equals("TRANSFER")) {
-            String u2 = (String) msgF.get("usuario2");
-            User u1 = (User) msgF.get("usuario1");
+                User user1 = userDao.find(u1.getId(), this.channel.getAddressAsString());
+                User user2 = userDao.find(u2, this.channel.getAddressAsString());
 
-            User user1 = userDao.find(u1.getId(), this.channel.getAddressAsString());
-            User user2 = userDao.find(u2, this.channel.getAddressAsString());
+                float value = (float) action.get("value");
+                float val1 = user1.getBalance().floatValue();
+                float val2 = user2.getBalance().floatValue();
 
-            float value = (float) msgF.get("value");
-            float val1 = user1.getBalance().floatValue();
-            float val2 = user2.getBalance().floatValue();
+                user1.setBalance(BigDecimal.valueOf(val2 - value));
+                user2.setBalance(BigDecimal.valueOf(val1 + value));
 
-            user1.setBalance(BigDecimal.valueOf(val2-value));
-            user2.setBalance(BigDecimal.valueOf(val1+value));
-
-            transaction.setSender(user1);
-            transaction.setReceiver(user2);
-            transaction.setValue(BigDecimal.valueOf(value));
-            transaction.setTime(new Timestamp(System.currentTimeMillis()));
+                transaction.setSender(user1);
+                transaction.setReceiver(user2);
+                transaction.setValue(BigDecimal.valueOf(value));
+                transaction.setTime(new Timestamp(System.currentTimeMillis()));
 
 
-            if (user1 == null) {
-                return 1;
-            } else if (userDao.find(user2.getId(), msg.getSrc().toString()) == null) {
-                return 1;
-            } else if ((user1.getBalance().floatValue() - value) < 0) {
-                return 2;
-            } else {
-                userDao.update(user1, this.channel.getAddressAsString());
-                userDao.update(user2,this.channel.getAddressAsString());
-                transactionDao.save(transaction, this.channel.getAddressAsString());
-                return 0;
-            }
-        } else if (msgF.get("tipo").equals("TRANSACTIONS")) {
-            User u = (User) msgF.get("usuario");
-            HashMap<String, ArrayList<Transaction>> transfer = new HashMap();
-            transfer.put("Recebidos", transactionDao.findbyReceiverId(u.getId(), msg.getSrc().toString()));
-            transfer.put("Enviados", transactionDao.findbySenderId(u.getId(), msg.getSrc().toString()));
-            return transfer;
+                if (user1 == null) {
+                    return 1;
+                } else if (userDao.find(user2.getId(), msg.getSrc().toString()) == null) {
+                    return 1;
+                } else if ((user1.getBalance().floatValue() - value) < 0) {
+                    return 2;
+                } else {
+                    userDao.update(user1, this.channel.getAddressAsString());
+                    userDao.update(user2, this.channel.getAddressAsString());
+                    transactionDao.save(transaction, this.channel.getAddressAsString());
+                    return 0;
+                }
+            case "TRANSACTIONS":
+                User u = (User) action.get("usuario");
+                HashMap<String, ArrayList<Transaction>> transfer = new HashMap();
+                transfer.put("Recebidos", transactionDao.findbyReceiverId(u.getId(), msg.getSrc().toString()));
+                transfer.put("Enviados", transactionDao.findbySenderId(u.getId(), msg.getSrc().toString()));
+                return transfer;
+
+            case "NEW":
+                var usuario = userDao.find((String) action.get("usuario"),  this.channel.getAddressAsString());
+                if (usuario != null)
+                    return "ERROR usuário já existe";
+                User newUser = new User();
+                newUser.setName((String) action.get("usuario"));
+                newUser.setPasswordHash((String) action.get("senha"));
+                newUser.setBalance(BigDecimal.valueOf(1000));
+                userDao.save(newUser, this.channel.getAddressAsString());
+                return "FREE";
+            case "LOGIN":
+                var senha = (String) action.get("senha");
+                var name = (String) action.get("usuario");
+                var usuario1 = userDao.find(name,  this.channel.getAddressAsString());
+                if (usuario1 != null) {
+                    if (!usuario1.getPasswordHash().equals(senha))
+                        return "AUTH falha senha incorreta";
+                    else
+                        return userDao.find(name, this.channel.getAddressAsString());
+                } else
+                    return "AUTH falha usuário não encontrado";
+            case "BALANCE":
+                var usuario3 = userDao.find((String) action.get("usuario"),  this.channel.getAddressAsString());
+                if (usuario3 != null) {
+                    return String.format("ACCOUNT %f", usuario3.getBalance());
+                } else
+                    return "ACCOUNT falha usuário não encontrado";
+            default:
+                // do nothing
+                return 3;
         }
-        return 3;
     }
 }

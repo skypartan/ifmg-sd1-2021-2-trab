@@ -9,7 +9,7 @@ import java.util.ArrayList;
 public class UserSqliteDao {
     private Connection connection;
 
-    public void insert(User user, String dbName) throws SQLException {
+    public void save(User user, String dbName) throws SQLException {
         String sql = "INSERT INTO userBank (name, password, balance) VALUES(?,?,?)";
         connection = new Connector().connect(dbName);
 

@@ -5,6 +5,7 @@ import org.jgroups.*;
 import org.jgroups.blocks.*;
 import org.jgroups.blocks.locking.LockService;
 import org.jgroups.protocols.RATE_LIMITER;
+import org.jgroups.stack.Protocol;
 import org.jgroups.tests.Probe;
 import org.jgroups.util.RspList;
 import org.jgroups.util.Util;
@@ -27,12 +28,13 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
     LockService lock_service;
 
     public void start(boolean isMensage, HashMap<String, String> h, RequestOptions opcoes) throws Exception {
-        channel = new JChannel(new ProtocolUtil().channelProtocols());
+        Protocol[] p = new ProtocolUtil().channelProtocols();
+        channel = new JChannel(p);
         channel.setReceiver(this);
         disp = new MessageDispatcher(channel, this);
         channel.connect("MessageDispatcherTestGroup");
-        RATE_LIMITER rate = new RATE_LIMITER();
-        rate.setMaxBytes(50);
+        RATE_LIMITER rate = (RATE_LIMITER) p[14];
+        rate.setMaxBytes(200);
         rate.setTimePeriod(1000);
         if (isMensage) {
             mensagem(h, opcoes);
@@ -90,6 +92,7 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
                 opcoes);
         //lock.lock();
         // try {
+        System.out.println(rsp_list.getFirst());
         if (rsp_list.getResults().contains(1) || rsp_list.getResults().contains(2) || rsp_list.getResults().contains(3)) {
             System.out.println("ERRO");
         }
