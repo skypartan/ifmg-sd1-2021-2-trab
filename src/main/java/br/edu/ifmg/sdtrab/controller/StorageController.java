@@ -67,10 +67,7 @@ public class StorageController implements RequestHandler, Receiver {
         //System.out.println("transfer");
         // TODO(lucasgb): Verificações
         try {
-            User user2 = userDao.find(u2, channel.getAddressAsString());
-            if (user2 == null) {
-                return null;
-            }
+           // User user2 = userDao.find(u2, channel.getAddressAsString());
             try {
                 var options = new RequestOptions();
                 options.setMode(ResponseMode.GET_ALL);
@@ -80,7 +77,7 @@ public class StorageController implements RequestHandler, Receiver {
                 HashMap<String, Object> hs = new HashMap<>();
                 hs.put("tipo", "TRANSFER");
                 hs.put("usuario1", u1);
-                hs.put("usuario2", user2);
+                hs.put("usuario2", u2);
                 hs.put("value", value);
                 Lock lock = lockService.getLock("lockTrans"); // gets a cluster-wide lock
                 lock.lock();
@@ -147,32 +144,35 @@ public class StorageController implements RequestHandler, Receiver {
         Transaction transaction = new Transaction();
 
         if (msgF.get("tipo").equals("TRANSFER")) {
+            String u2 = (String) msgF.get("usuario2");
             User u1 = (User) msgF.get("usuario1");
-            User u2 = (User) msgF.get("usuario2");
+
+            User user1 = userDao.find(u1.getId(), this.channel.getAddressAsString());
+            User user2 = userDao.find(u2, this.channel.getAddressAsString());
+
             float value = (float) msgF.get("value");
-            float val1 = u2.getBalance().floatValue();
-            float val2 = u2.getBalance().floatValue();
+            float val1 = user1.getBalance().floatValue();
+            float val2 = user2.getBalance().floatValue();
 
-            u1.setBalance(BigDecimal.valueOf(val2-value));
-            u2.setBalance(BigDecimal.valueOf(val1+value));
+            user1.setBalance(BigDecimal.valueOf(val2-value));
+            user2.setBalance(BigDecimal.valueOf(val1+value));
 
-            transaction.setSender(u1);
-            transaction.setReceiver(u2);
+            transaction.setSender(user1);
+            transaction.setReceiver(user2);
             transaction.setValue(BigDecimal.valueOf(value));
             transaction.setTime(new Timestamp(System.currentTimeMillis()));
 
-            User user = userDao.find(u1.getId(), msg.getSrc().toString());
 
-            if (user == null) {
+            if (user1 == null) {
                 return 1;
-            } else if (userDao.find(u2.getId(), msg.getSrc().toString()) == null) {
+            } else if (userDao.find(user2.getId(), msg.getSrc().toString()) == null) {
                 return 1;
-            } else if ((user.getBalance().floatValue() - value) < 0) {
+            } else if ((user1.getBalance().floatValue() - value) < 0) {
                 return 2;
             } else {
-                userDao.update(u1, msg.getSrc().toString());
-                userDao.update(u2, msg.getSrc().toString());
-                transactionDao.save(transaction, msg.getSrc().toString());
+                userDao.update(user1, this.channel.getAddressAsString());
+                userDao.update(user2,this.channel.getAddressAsString());
+                transactionDao.save(transaction, this.channel.getAddressAsString());
                 return 0;
             }
         } else if (msgF.get("tipo").equals("TRANSACTIONS")) {

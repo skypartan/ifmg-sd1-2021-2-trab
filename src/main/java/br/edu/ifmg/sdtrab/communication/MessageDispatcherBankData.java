@@ -9,7 +9,13 @@ import org.jgroups.tests.Probe;
 import org.jgroups.util.RspList;
 import org.jgroups.util.Util;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 
@@ -37,6 +43,29 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
         //} finally {
         //   lock.unlock();
         //}
+    }
+
+
+    @Override
+    public void getState(OutputStream output) throws Exception {
+        Object state = new Object();
+        synchronized(state) {
+            Util.objectToStream(state, new DataOutputStream(output));
+        }
+    }
+
+    @Override
+    public void setState(InputStream input) throws Exception {
+        List<String> list;
+        list=(List<String>)Util.objectFromStream(new DataInputStream(input));
+        List state = new ArrayList();
+        synchronized(state) {
+            state.clear();
+            state.addAll(list);
+        }
+        System.out.println(list.size() + " messages in chat history):");
+        for(String str: list)
+            System.out.println(str);
     }
 
     // Mensagem recebida
@@ -81,7 +110,7 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
     @Override
     public Object handle(org.jgroups.Message msg) throws Exception {
         HashMap msgF = msg.getObject();
-        System.out.println(msg.getSrc());
+        System.out.println(this.getClass());
         if (msgF.get("tipo").equals("NEW")) {
             System.out.println(msgF.get("tipo"));
             System.out.println(msgF.get("usuario") + " " + msgF.get("senha"));
