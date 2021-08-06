@@ -32,8 +32,7 @@ public class StorageController implements RequestHandler, Receiver {
     private Address address;
     private MessageDispatcher dispatcher;
     private LockService lockService;
-    private TransactionSqliteDao transactionDao;
-    private UserSqliteDao userDao;
+
 
     public StorageController() {
 
@@ -241,6 +240,8 @@ public class StorageController implements RequestHandler, Receiver {
 
     @Override
     public Object handle(Message msg) throws Exception {
+        TransactionSqliteDao transactionDao = new TransactionSqliteDao();
+        UserSqliteDao userDao = new UserSqliteDao();
         Transaction transaction = new Transaction();
         var action = (HashMap<String, Object>) msg.getObject();
         var tipo = (String) action.get("tipo");
