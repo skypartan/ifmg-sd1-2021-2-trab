@@ -110,7 +110,7 @@ public class StorageController implements RequestHandler, Receiver {
         return null;
     }
 
-    public User newUser(String name, String password) {
+    public Object newUser(String name, String password) {
         try {
             var options = new RequestOptions();
             options.setMode(ResponseMode.GET_ALL);
@@ -126,14 +126,11 @@ public class StorageController implements RequestHandler, Receiver {
             if (list == null) {
                 return null;
             } else {
-                var status = (String) list.getFirst();
-                if (status.startsWith("FREE")) {
-                    User u = new User();
-                    u.setName(name);
-                    u.setPasswordHash(password);
-
+                var status = list.getResults();
+                if (status.contains("ERROR usuário já existe")) {
+                    return "Usuário já existe";
                 } else {
-                    System.out.println("Usuário já existe");
+                    return status.get(0);
                 }
             }
         } catch (Exception e) {
@@ -294,7 +291,8 @@ public class StorageController implements RequestHandler, Receiver {
                 newUser.setPasswordHash((String) action.get("senha"));
                 newUser.setBalance(BigDecimal.valueOf(1000));
                 userDao.save(newUser, this.channel.getAddressAsString());
-                return "FREE";
+                newUser = userDao.find(newUser.getName(), this.channel.getAddressAsString());
+                return newUser;
             case "LOGIN":
                 var senha = (String) action.get("senha");
                 var name = (String) action.get("usuario");
