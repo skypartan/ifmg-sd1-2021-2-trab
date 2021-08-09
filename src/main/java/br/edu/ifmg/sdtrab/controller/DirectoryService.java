@@ -7,6 +7,7 @@ import org.jgroups.blocks.RequestHandler;
 import org.jgroups.blocks.RequestOptions;
 import org.jgroups.blocks.ResponseMode;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 public class DirectoryService implements Receiver {
@@ -72,6 +73,8 @@ public class DirectoryService implements Receiver {
 
     @Override
     public void viewAccepted(View newView) {
+        System.out.println("Visão da rede: " + Arrays.toString(newView.getMembersRaw()));
+
         try {
             nodeController.decideRole();
         }
