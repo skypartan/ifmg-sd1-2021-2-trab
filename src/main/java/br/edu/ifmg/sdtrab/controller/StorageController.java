@@ -66,10 +66,6 @@ public class StorageController implements RequestHandler, Receiver {
         return null;
     }
 
-    public ObjectMessage nodeHandle(ObjectMessage message) {
-        return null;
-    }
-
     public int networkSize() {
         return channel.getView().getMembers().size();
     }

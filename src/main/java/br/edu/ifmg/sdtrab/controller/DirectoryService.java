@@ -7,24 +7,26 @@ import org.jgroups.blocks.RequestHandler;
 import org.jgroups.blocks.RequestOptions;
 import org.jgroups.blocks.ResponseMode;
 
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 
 public class DirectoryService implements Receiver {
 
-    private final JChannel directoryChannel;
-    private final MessageDispatcher dispatcher;
+    private JChannel directoryChannel;
+    private MessageDispatcher dispatcher;
 
     private final NodeController nodeController;
 
     public DirectoryService(NodeController nodeController) throws Exception {
         this.nodeController = nodeController;
+    }
 
+    public void connect() throws Exception {
         System.out.println("Inicializando serviço de diretório");
         directoryChannel = new JChannel(ProtocolUtil.channelProtocols());
         directoryChannel.setReceiver(this);
-        directoryChannel.setName("ebank-directoryChannel");
-        dispatcher = new MessageDispatcher(directoryChannel, nodeController);
+        directoryChannel.connect("ebank-directoryChannel");
     }
 
     public Address controlController() throws Exception {
@@ -38,7 +40,7 @@ public class DirectoryService implements Receiver {
         for (Object messageObj : messages) {
             var message = (ObjectMessage) messageObj;
             if (message.getObject().equals("CONTROL_CONTROLLER"))
-                return message.getSrc();
+                return message.src();
         }
 
         return null;
@@ -73,6 +75,9 @@ public class DirectoryService implements Receiver {
 
     @Override
     public void viewAccepted(View newView) {
+        if (dispatcher == null)
+            dispatcher = new MessageDispatcher(directoryChannel, nodeController);
+
         System.out.println("Visão da rede: " + Arrays.toString(newView.getMembersRaw()));
 
         try {
@@ -83,5 +88,9 @@ public class DirectoryService implements Receiver {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    public Address myAddres() {
+        return directoryChannel.getAddress();
     }
 }

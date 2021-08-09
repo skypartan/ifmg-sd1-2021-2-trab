@@ -15,13 +15,15 @@ public class NodeController implements RequestHandler {
     private final StorageController storageService;
 
     public NodeController(boolean worker) throws Exception {
+        if (!worker)
+            role = NodeRole.CLIENT_NODE;
+
         directoryService = new DirectoryService(this);
         clientService = new ClientService(directoryService);
         controlService = new ControlController(this);
         storageService = new StorageController(this);
 
-        if (!worker)
-            role = NodeRole.CLIENT_NODE;
+        directoryService.connect();
     }
 
     public void decideRole() throws Exception {
@@ -61,33 +63,34 @@ public class NodeController implements RequestHandler {
                 controlService.disconnect();
             }
         }
+
+        System.out.println("Cargo decidido: " + role.name());
     }
 
     @Override
     public Object handle(Message msg) throws Exception {
+        if (msg.getSrc() == directoryService.myAddres())
+            return null;
+
         var message = (String) msg.getObject();
         System.out.println("Recebido novo comando: " + message);
 
         if (message.equals("QUERY"))
-            return new ObjectMessage(msg.src(), role.name());
+            return new ObjectMessage(msg.src(), role.name()).setSrc(directoryService.myAddres());
         if (message.equals("NODES")) {
             if (role == NodeRole.CONTROL_CONTROLLER)
-                return new ObjectMessage(msg.src(), controlService.networkSize());
+                return new ObjectMessage(msg.src(), controlService.networkSize()).setSrc(directoryService.myAddres());
             if (role == NodeRole.STORAGE_CONTROLLER)
-                return new ObjectMessage(msg.src(), storageService.networkSize());
+                return new ObjectMessage(msg.src(), storageService.networkSize()).setSrc(directoryService.myAddres());
         }
 
         if (message.startsWith("CONTROL")) {
             if (role == NodeRole.CONTROL_CONTROLLER)
                 return controlService.controllerHandle((ObjectMessage) msg);
-            else if (role == NodeRole.CONTROL_NODE)
-                return controlService.nodeHandle((ObjectMessage) msg);
         }
         if (message.startsWith("STORAGE")) {
             if (role == NodeRole.STORAGE_CONTROLLER)
                 return storageService.controllerHandle((ObjectMessage) msg);
-            else if (role == NodeRole.STORAGE_NODE)
-                return storageService.nodeHandle((ObjectMessage) msg);
         }
 
         return null;
