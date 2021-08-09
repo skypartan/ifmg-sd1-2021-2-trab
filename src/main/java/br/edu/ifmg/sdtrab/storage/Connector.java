@@ -1,14 +1,11 @@
 package br.edu.ifmg.sdtrab.storage;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 public class Connector {
     public Connection connect(String dbName) {
         // SQLite connection string
-        String url = "jdbc:sqlite:C://sqlite/db/e-bank-JDBC.db";
+        String url = "jdbc:sqlite:C://sqlite/db/e-bank-JDBC-"+dbName+".db";
         Connection conn = null;
         try {
             conn = DriverManager.getConnection(url);
@@ -17,6 +14,18 @@ public class Connector {
             System.out.println(e.getMessage());
         }
         return conn;
+    }
+
+    public void dropDatabase(String dbName) throws SQLException {
+        String url = "jdbc:sqlite:C://sqlite/db/e-bank-JDBC-"+dbName+".db";
+
+        Connection conn = DriverManager.getConnection(url);
+        Statement stmt = conn.createStatement();
+        String sql = "DROP TABLE IF EXISTS 'transactionBank'";
+
+        String sql1 = "DROP TABLE IF EXISTS 'userBank'";
+        stmt.execute(sql);
+        stmt.execute(sql1);
     }
 
     public static void createNewTable(String dbName) {

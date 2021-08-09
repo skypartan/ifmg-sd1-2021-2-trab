@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-
 class MessageDispatcherBankData implements RequestHandler, Receiver {
     JChannel channel;
     MessageDispatcher disp;
@@ -51,7 +50,7 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
     @Override
     public void getState(OutputStream output) throws Exception {
         Object state = new Object();
-        synchronized(state) {
+        synchronized (state) {
             Util.objectToStream(state, new DataOutputStream(output));
         }
     }
@@ -59,14 +58,14 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
     @Override
     public void setState(InputStream input) throws Exception {
         List<String> list;
-        list=(List<String>)Util.objectFromStream(new DataInputStream(input));
+        list = (List<String>) Util.objectFromStream(new DataInputStream(input));
         List state = new ArrayList();
-        synchronized(state) {
+        synchronized (state) {
             state.clear();
             state.addAll(list);
         }
         System.out.println(list.size() + " messages in chat history):");
-        for(String str: list)
+        for (String str : list)
             System.out.println(str);
     }
 
@@ -98,10 +97,10 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
         }
         System.out.println("Responses:\n" + rsp_list);
 
-       // while(rsp_list.iterator().hasNext()) {
-            Object element = rsp_list.toString();
-            System.out.print(rsp_list.toString().split(":")[0].replace("[", "") + " ");
-            System.out.print(rsp_list.get(rsp_list.toString().split(":")[0].replace("[", ""))+ " ");
+        // while(rsp_list.iterator().hasNext()) {
+        Object element = rsp_list.toString();
+        System.out.print(rsp_list.toString().split(":")[0].replace("[", "") + " ");
+        System.out.print(rsp_list.get(rsp_list.toString().split(":")[0].replace("[", "")) + " ");
 
         //}
         //  } finally {
@@ -139,8 +138,6 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
     private void eventLoop() throws Exception {
         while (channel.getView().getMembers().toArray().length != 0)
             Util.sleep(100); // aguarda o primeiro membro sair do cluster
-
-
     }//eventLoop
 
     public static void main(String[] args) {
@@ -158,7 +155,7 @@ class MessageDispatcherBankData implements RequestHandler, Receiver {
             opcoes.setAnycasting(false);
             System.out.println("Casting message #" + 0);
             opcoes.SYNC();
-            new MessageDispatcherBankData().start(true, test, opcoes);
+            new MessageDispatcherBankData().start(false, test, opcoes);
             //  }
         } catch (Exception e) {
             System.err.println(e);

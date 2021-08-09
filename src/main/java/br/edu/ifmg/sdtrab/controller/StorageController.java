@@ -2,7 +2,7 @@ package br.edu.ifmg.sdtrab.controller;
 
 import br.edu.ifmg.sdtrab.entity.Transaction;
 import br.edu.ifmg.sdtrab.entity.User;
-import br.edu.ifmg.sdtrab.storage.TransactionDao;
+import br.edu.ifmg.sdtrab.storage.Connector;
 import br.edu.ifmg.sdtrab.storage.TransactionSqliteDao;
 import br.edu.ifmg.sdtrab.storage.UserDao;
 import br.edu.ifmg.sdtrab.storage.UserSqliteDao;
@@ -17,8 +17,6 @@ import org.jgroups.protocols.RATE_LIMITER;
 import org.jgroups.stack.Protocol;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -37,11 +35,28 @@ public class StorageController implements RequestHandler, Receiver {
 
     }
 
-    public void connect() {
-
+    public void connect() throws Exception {
+        new ProtocolUtil();
+        Protocol[] p = ProtocolUtil.channelProtocols();
+        channel = new JChannel(p);
+        channel.setReceiver(this);
+        channel.connect("ebankData");
+        dispatcher = new MessageDispatcher(channel, this);
+        lockService = new LockService(channel);
+        Lock lock = lockService.getLock("lockState"); // gets a cluster-wide lock
+        lock.lock();
+        try {
+            this.getState();
+        } finally {
+            lock.unlock();
+        }
+        RATE_LIMITER rate = (RATE_LIMITER) p[14];
+        rate.setMaxBytes(200);
+        rate.setTimePeriod(1000);
+        address = channel.getAddress();
     }
 
-    public void disconnect() {
+    public void disconnect() throws Exception {
 
     }
 
@@ -85,7 +100,6 @@ public class StorageController implements RequestHandler, Receiver {
     }
 
     public String transfer(User u1, String u2, float value) {
-        //System.out.println("transfer");
         // TODO(lucasgb): Verificações
         try {
             // User user2 = userDao.find(u2, channel.getAddressAsString());
@@ -220,17 +234,39 @@ public class StorageController implements RequestHandler, Receiver {
         return null;
     }
 
-    public void initRole() throws Exception {
-        Protocol[] p = new ProtocolUtil().channelProtocols();
-        channel = new JChannel(p);
-        channel.setReceiver(this);
-        channel.connect("ebankData");
-        dispatcher = new MessageDispatcher(channel, this);
-        lockService = new LockService(channel);
-        RATE_LIMITER rate = (RATE_LIMITER) p[14];
-        rate.setMaxBytes(200);
-        rate.setTimePeriod(1000);
-        address = channel.getAddress();
+    protected void getState(){
+        try {
+            var options = new RequestOptions();
+            options.setMode(ResponseMode.GET_FIRST);
+            options.setAnycasting(false);
+            options.SYNC();
+
+            HashMap<String, Object> hs = new HashMap();
+            hs.put("tipo", "GET_OBJECT");
+            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            if (list == null) {
+                int x;
+            } else {
+                var status = (HashMap) list.getFirst();
+                var user = (ArrayList<User>) status.get("user");
+                var transaction = (ArrayList<Transaction>) status.get("transf");
+
+                new Connector().dropDatabase(this.channel.getAddressAsString());
+
+                UserSqliteDao ud = new UserSqliteDao();
+                TransactionSqliteDao td = new TransactionSqliteDao();
+
+                for(int i = 0;i < user.size(); i++){
+                    ud.save(user.get(i), this.channel.getAddressAsString());
+                }
+
+                for(int i = 0;i < transaction.size(); i++){
+                    td.save(transaction.get(i), this.channel.getAddressAsString());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // Mensagem recebida
@@ -244,15 +280,6 @@ public class StorageController implements RequestHandler, Receiver {
         System.out.println("** view transaction: " + new_view);
     }
 
-    @Override
-    public void getState(OutputStream output) throws Exception {
-
-    }
-
-    @Override
-    public void setState(InputStream input) throws Exception {
-
-    }
 
     @Override
     public Object handle(Message msg) throws Exception {
@@ -302,7 +329,7 @@ public class StorageController implements RequestHandler, Receiver {
                 return transfer;
 
             case "NEW":
-                var usuario = userDao.find((String) action.get("usuario"),  this.channel.getAddressAsString());
+                var usuario = userDao.find((String) action.get("usuario"), this.channel.getAddressAsString());
                 if (usuario != null)
                     return "ERROR usuário já existe";
                 User newUser = new User();
@@ -315,7 +342,7 @@ public class StorageController implements RequestHandler, Receiver {
             case "LOGIN":
                 var senha = (String) action.get("senha");
                 var name = (String) action.get("usuario");
-                var usuario1 = userDao.find(name,  this.channel.getAddressAsString());
+                var usuario1 = userDao.find(name, this.channel.getAddressAsString());
                 if (usuario1 != null) {
                     if (!usuario1.getPasswordHash().equals(senha))
                         return "AUTH falha senha incorreta";
@@ -324,11 +351,16 @@ public class StorageController implements RequestHandler, Receiver {
                 } else
                     return "AUTH falha usuário não encontrado";
             case "BALANCE":
-                var usuario3 = userDao.find((String) action.get("usuario"),  this.channel.getAddressAsString());
+                var usuario3 = userDao.find((String) action.get("usuario"), this.channel.getAddressAsString());
                 if (usuario3 != null) {
                     return String.format("ACCOUNT %f", usuario3.getBalance());
                 } else
                     return "ACCOUNT falha usuário não encontrado";
+            case "GET_OBJECT":
+                HashMap<String, ArrayList> getObject = new HashMap<>();
+                getObject.put("user", userDao.selectAll(this.channel.getAddressAsString()));
+                getObject.put("transf", transactionDao.selectAll(this.channel.getAddressAsString()));
+                return getObject;
             default:
                 // do nothing
                 return 3;

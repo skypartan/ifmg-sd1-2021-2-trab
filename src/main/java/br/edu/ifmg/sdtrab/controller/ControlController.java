@@ -86,6 +86,8 @@ public class ControlController implements RequestHandler, Receiver {
         return null;
     }
 
+
+
     public String transfer(Address destino, User u1, String u2, float value) {
         //System.out.println("transfer");
         // TODO(lucasgb): Verificações
@@ -107,7 +109,7 @@ public class ControlController implements RequestHandler, Receiver {
                 Lock lock = lockService.getLock("lockTrans"); // gets a cluster-wide lock
                 lock.lock();
                 try {
-                    var list = dispatcher.castMessage(ls, new ObjectMessage(ls.get(0), hs), options);
+                    var list = dispatcher.castMessage(ls, new ObjectMessage(destino, hs), options);
                     if (list != null) {
 
                         if (list.getResults().contains(1)) {
@@ -138,7 +140,7 @@ public class ControlController implements RequestHandler, Receiver {
             var ls = new ArrayList<Address>();
             ls.add(destino);
             var options = new RequestOptions();
-            options.setMode(ResponseMode.GET_ALL);
+            options.setMode(ResponseMode.GET_FIRST);
             options.setAnycasting(false);
             RequestOptions.SYNC();
 
@@ -204,7 +206,7 @@ public class ControlController implements RequestHandler, Receiver {
             ls.add(destino);
             var options = new RequestOptions();
             options.setMode(ResponseMode.GET_FIRST);
-            options.setAnycasting(true);
+            options.setAnycasting(false);
             options.SYNC();
 
             HashMap<String, Object> hs = new HashMap<>();
@@ -212,7 +214,7 @@ public class ControlController implements RequestHandler, Receiver {
             hs.put("usuario", name);
             hs.put("senha", password);
 
-            var list = dispatcher.castMessage(ls, new ObjectMessage(null, hs), options);
+            var list = dispatcher.castMessage(ls, new ObjectMessage(destino, hs), options);
             if (list == null) {
                 return null;
             } else {
@@ -231,7 +233,8 @@ public class ControlController implements RequestHandler, Receiver {
     }
 
     public void initRole() throws Exception {
-        Protocol[] p = new ProtocolUtil().channelProtocols();
+        new ProtocolUtil();
+        Protocol[] p = ProtocolUtil.channelProtocols();
         channel = new JChannel(p);
         channel.setReceiver(this);
         channel.connect("ebankData");

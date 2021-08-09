@@ -15,6 +15,8 @@ public class ConnectionBuilder {
         properties = new StorageProperties("storage.properties");
     }
 
+
+
     public Connection build() throws SQLException {
         return DriverManager.getConnection(String.format("jdbc:mariadb://%s:%d/%s?user=%s&password=%s",
                 properties.getDbHost(), properties.getDbPort(), properties.getDbName(),
