@@ -43,12 +43,14 @@ public class StorageController implements RequestHandler, Receiver {
         channel.connect("ebankData");
         dispatcher = new MessageDispatcher(channel, this);
         lockService = new LockService(channel);
-        Lock lock = lockService.getLock("lockState"); // gets a cluster-wide lock
-        lock.lock();
-        try {
-            this.getState();
-        } finally {
-            lock.unlock();
+        if (channel.getView().getMembers().size() > 0) {
+            Lock lock = lockService.getLock("lockState"); // gets a cluster-wide lock
+            lock.lock();
+            try {
+                this.getState();
+            } finally {
+                lock.unlock();
+            }
         }
         RATE_LIMITER rate = (RATE_LIMITER) p[14];
         rate.setMaxBytes(200);
@@ -234,7 +236,7 @@ public class StorageController implements RequestHandler, Receiver {
         return null;
     }
 
-    protected void getState(){
+    protected void getState() {
         try {
             var options = new RequestOptions();
             options.setMode(ResponseMode.GET_FIRST);
@@ -256,11 +258,11 @@ public class StorageController implements RequestHandler, Receiver {
                 UserSqliteDao ud = new UserSqliteDao();
                 TransactionSqliteDao td = new TransactionSqliteDao();
 
-                for(int i = 0;i < user.size(); i++){
+                for (int i = 0; i < user.size(); i++) {
                     ud.save(user.get(i), this.channel.getAddressAsString());
                 }
 
-                for(int i = 0;i < transaction.size(); i++){
+                for (int i = 0; i < transaction.size(); i++) {
                     td.save(transaction.get(i), this.channel.getAddressAsString());
                 }
             }
