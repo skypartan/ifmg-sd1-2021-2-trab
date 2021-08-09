@@ -20,7 +20,7 @@ public class NodeController implements RequestHandler {
         controlService = new ControlController(this);
         storageService = new StorageController(this);
 
-        if (worker)
+        if (!worker)
             role = NodeRole.CLIENT_NODE;
     }
 
