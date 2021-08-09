@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -37,8 +38,17 @@ public class ControlController implements RequestHandler, Receiver {
 
     }
 
-    public void connect() {
-
+    public void connect() throws Exception {
+        Protocol[] p = ProtocolUtil.channelProtocols();
+        channel = new JChannel(p);
+        channel.setReceiver(this);
+        channel.connect("ebankControl");
+        dispatcher = new MessageDispatcher(channel, this);
+        lockService = new LockService(channel);
+        RATE_LIMITER rate = (RATE_LIMITER) p[14];
+        rate.setMaxBytes(200);
+        rate.setTimePeriod(1000);
+        address = channel.getAddress();
     }
 
     public void disconnect() {
@@ -226,20 +236,6 @@ public class ControlController implements RequestHandler, Receiver {
         }
 
         return null;
-    }
-
-    public void initRole() throws Exception {
-        new ProtocolUtil();
-        Protocol[] p = ProtocolUtil.channelProtocols();
-        channel = new JChannel(p);
-        channel.setReceiver(this);
-        channel.connect("ebankData");
-        dispatcher = new MessageDispatcher(channel, this);
-        lockService = new LockService(channel);
-        RATE_LIMITER rate = (RATE_LIMITER) p[14];
-        rate.setMaxBytes(200);
-        rate.setTimePeriod(1000);
-        address = channel.getAddress();
     }
 
     @Override

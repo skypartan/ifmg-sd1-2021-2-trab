@@ -36,7 +36,6 @@ public class StorageController implements RequestHandler, Receiver {
     }
 
     public void connect() throws Exception {
-        new ProtocolUtil();
         Protocol[] p = ProtocolUtil.channelProtocols();
         channel = new JChannel(p);
         channel.setReceiver(this);

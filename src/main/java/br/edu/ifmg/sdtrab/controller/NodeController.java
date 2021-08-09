@@ -49,8 +49,8 @@ public class NodeController implements RequestHandler {
             var controlNodesQuery = directoryService.sendMessage(new ObjectMessage(control, "NODES"));
             var storageNodesQuery = directoryService.sendMessage(new ObjectMessage(storage, "NODES"));
 
-            var controlNodeNetwork = Integer.parseInt(controlNodesQuery.getObject());
-            var storageNodeNetwork = Integer.parseInt(storageNodesQuery.getObject());
+            var controlNodeNetwork = (int) controlNodesQuery.getObject();
+            var storageNodeNetwork = (int) storageNodesQuery.getObject();
 
             if (controlNodeNetwork < storageNodeNetwork) {
                 role = NodeRole.CONTROL_NODE;

@@ -1,7 +1,7 @@
 ###
 
 .idea
-storage.properties
+run/
 
 ### Gradle template
 .gradle

@@ -5,7 +5,7 @@ import java.sql.*;
 public class Connector {
     public Connection connect(String dbName) {
         // SQLite connection string
-        String url = "jdbc:sqlite:C://sqlite/db/e-bank-JDBC-"+dbName+".db";
+        String url = "jdbc:sqlite:./sqlite/db/e-bank-JDBC-"+dbName+".db";
         Connection conn = null;
         try {
             conn = DriverManager.getConnection(url);
@@ -17,7 +17,7 @@ public class Connector {
     }
 
     public void dropDatabase(String dbName) throws SQLException {
-        String url = "jdbc:sqlite:C://sqlite/db/e-bank-JDBC-"+dbName+".db";
+        String url = "jdbc:sqlite:./sqlite/db/e-bank-JDBC-"+dbName+".db";
 
         Connection conn = DriverManager.getConnection(url);
         Statement stmt = conn.createStatement();
@@ -30,7 +30,7 @@ public class Connector {
 
     public static void createNewTable(String dbName) {
         // SQLite connection string
-        String url = "jdbc:sqlite:C://sqlite/db/e-bank-JDBC-"+dbName+".db";
+        String url = "jdbc:sqlite:./sqlite/db/e-bank-JDBC-"+dbName+".db";
 
         // SQL statement for creating a new table
         String sql = "CREATE TABLE IF NOT EXISTS userBank (\n"
