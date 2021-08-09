@@ -42,7 +42,7 @@ public class StorageController implements RequestHandler, Receiver {
         channel.connect("ebankData");
         dispatcher = new MessageDispatcher(channel, this);
         lockService = new LockService(channel);
-        if (this.networkSize() > 1) {
+        if (this.networkSize() > 0) {
             Lock lock = lockService.getLock("lockState"); // gets a cluster-wide lock
             lock.lock();
             try {
@@ -241,24 +241,24 @@ public class StorageController implements RequestHandler, Receiver {
             HashMap<String, Object> hs = new HashMap();
             hs.put("tipo", "GET_OBJECT");
             var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
-            if (list == null) {
-                int x;
-            } else {
+            if (list != null) {
                 var status = (HashMap) list.getFirst();
-                var user = (ArrayList<User>) status.get("user");
-                var transaction = (ArrayList<Transaction>) status.get("transf");
+                if (status != null) {
+                    var user = (ArrayList<User>) status.get("user");
+                    var transaction = (ArrayList<Transaction>) status.get("transf");
 
-                new Connector().dropDatabase(this.channel.getAddressAsString());
+                    new Connector().dropDatabase(this.channel.getAddressAsString());
 
-                UserSqliteDao ud = new UserSqliteDao();
-                TransactionSqliteDao td = new TransactionSqliteDao();
+                    UserSqliteDao ud = new UserSqliteDao();
+                    TransactionSqliteDao td = new TransactionSqliteDao();
 
-                for (int i = 0; i < user.size(); i++) {
-                    ud.save(user.get(i), this.channel.getAddressAsString());
-                }
+                    for (int i = 0; i < user.size(); i++) {
+                        ud.save(user.get(i), this.channel.getAddressAsString());
+                    }
 
-                for (int i = 0; i < transaction.size(); i++) {
-                    td.save(transaction.get(i), this.channel.getAddressAsString());
+                    for (int i = 0; i < transaction.size(); i++) {
+                        td.save(transaction.get(i), this.channel.getAddressAsString());
+                    }
                 }
             }
         } catch (Exception e) {
