@@ -1,139 +1,116 @@
 package br.edu.ifmg.sdtrab.controller;
 
-import br.edu.ifmg.sdtrab.ApplicationContext;
-import br.edu.ifmg.sdtrab.util.ProtocolUtil;
-import org.jgroups.*;
-import org.jgroups.blocks.MessageDispatcher;
+import br.edu.ifmg.sdtrab.util.NodeRole;
+import org.jgroups.Message;
+import org.jgroups.ObjectMessage;
 import org.jgroups.blocks.RequestHandler;
-import org.jgroups.blocks.RequestOptions;
-import org.jgroups.blocks.ResponseMode;
 
-import java.util.HashMap;
+public class NodeController implements RequestHandler {
 
-public class NodeController implements Receiver, RequestHandler {
-
-    private Address address;
     private NodeRole role;
 
-    private JChannel directoryChannel;
-    private MessageDispatcher dispatcher;
+    private final DirectoryService directoryService;
+    private final ClientService clientService;
+    private final ControlController controlService;
+    private final StorageController storageService;
 
-    private ApplicationContext context;
+    public NodeController(boolean worker) throws Exception {
+        directoryService = new DirectoryService(this);
+        clientService = new ClientService(directoryService);
+        controlService = new ControlController(this);
+        storageService = new StorageController(this);
 
-    public NodeController(ApplicationContext context) {
-        this.context = context;
-
-        if (!context.isWorker())
+        if (worker)
             role = NodeRole.CLIENT_NODE;
     }
 
-
-    public void init() throws Exception {
-        directoryChannel = new JChannel(ProtocolUtil.channelProtocols());
-        directoryChannel.setReceiver(this);
-        directoryChannel.connect("ebank-directory");
-        address = directoryChannel.getAddress();
-
-        dispatcher = new MessageDispatcher(directoryChannel, this);
-
-        if (role == NodeRole.CLIENT_NODE) // Se o nó é cliente ele não deve fazer mais nada
+    public void decideRole() throws Exception {
+        if (role == NodeRole.CLIENT_NODE)
             return;
 
-        // Consultar diretório para verificar qual cargo o nó atual deve atuar
-        var options = new RequestOptions();
-        options.setMode(ResponseMode.GET_ALL);
-        options.setAnycasting(false);
-        RequestOptions.SYNC();
+        System.out.println("Decidindo cargo");
 
-        var message = new HashMap<String, String>();
-        message.put("task", "controller_query");
+        var control = directoryService.controlController();
+        var storage = directoryService.storageController();
 
-        var response = dispatcher.castMessage(null, new ObjectMessage(null, message), options);
-        if (response.numReceived() < 2) { // Nó deve se tornar um coordenador
-            var received = (HashMap<String, String>) response.getFirst();
-            if (received == null || received.get("role").equals("control")) {
-                role = NodeRole.STORAGE_CONTROLLER;
-                message.put("role", "storage");
-            }
-            else if (received.get("role").equals("storage")) {
-                role = NodeRole.CONTROL_CONTROLLER;
-                message.put("role", "control");
-            }
-
-            received.put("task", "controller_set");
-            dispatcher.castMessage(null, new ObjectMessage(null, received), options);
-
-            dispatcher.close();
-            directoryChannel.close();
+        if (control == null) {
+            role = NodeRole.CONTROL_CONTROLLER;
+            controlService.connect();
+            storageService.disconnect();
         }
-        else { // Node pode-se conectar à rede de um coordenador
-
-            // Conectar-se a ambos os controles e decidir sob qual operar
-            //response.getSuspectedMembers().
-
-            // Iniciar controller de acordo com controlador que se conectou
-//            storageController.initRole();
-//            controlController.initRole();
+        else if (storage == null) {
+            role = NodeRole.STORAGE_CONTROLLER;
+            storageService.connect();
+            controlService.disconnect();
         }
-    }
+        else {
+            var controlNodesQuery = directoryService.sendMessage(new ObjectMessage(control, "NODES"));
+            var storageNodesQuery = directoryService.sendMessage(new ObjectMessage(storage, "NODES"));
 
-    public void changeRole(NodeRole newRole) {
+            var controlNodeNetwork = Integer.parseInt(controlNodesQuery.getObject());
+            var storageNodeNetwork = Integer.parseInt(storageNodesQuery.getObject());
 
-    }
-
-
-    /**
-     *
-     * @param newView
-     */
-    @Override
-    public void viewAccepted(View newView) {
-        //
+            if (controlNodeNetwork < storageNodeNetwork) {
+                role = NodeRole.CONTROL_NODE;
+                controlService.connect();
+                storageService.disconnect();
+            }
+            else {
+                role = NodeRole.STORAGE_NODE;
+                storageService.connect();
+                controlService.disconnect();
+            }
+        }
     }
 
     @Override
     public Object handle(Message msg) throws Exception {
-        var message = (HashMap<String, String>) msg.getObject();
-        if (message.get("task").equals("controller_query")) {
-            if (role == NodeRole.CONTROL_CONTROLLER)
-                message.put("role", "control");
-            if (role == NodeRole.STORAGE_CONTROLLER)
-                message.put("role", "storage");
+        var message = (String) msg.getObject();
+        System.out.println("Recebido novo comando: " + message);
 
-            return new ObjectMessage(null, message);
+        if (message.equals("QUERY"))
+            return new ObjectMessage(msg.src(), role.name());
+        if (message.equals("NODES")) {
+            if (role == NodeRole.CONTROL_CONTROLLER)
+                return new ObjectMessage(msg.src(), controlService.networkSize());
+            if (role == NodeRole.STORAGE_CONTROLLER)
+                return new ObjectMessage(msg.src(), storageService.networkSize());
         }
-        if (message.get("task").equals("controller_set")) {
-            System.out.println(String.format("Novo controlador: %s -> %s", msg.src(), message.get("task")));
+
+        if (message.startsWith("CONTROL")) {
+            if (role == NodeRole.CONTROL_CONTROLLER)
+                return controlService.controllerHandle((ObjectMessage) msg);
+            else if (role == NodeRole.CONTROL_NODE)
+                return controlService.nodeHandle((ObjectMessage) msg);
+        }
+        if (message.startsWith("STORAGE")) {
+            if (role == NodeRole.STORAGE_CONTROLLER)
+                return storageService.controllerHandle((ObjectMessage) msg);
+            else if (role == NodeRole.STORAGE_NODE)
+                return storageService.nodeHandle((ObjectMessage) msg);
         }
 
         return null;
     }
 
-    public static enum NodeRole {
-        CLIENT_NODE,
-        CONTROL_CONTROLLER,
-        CONTROL_NODE,
-        STORAGE_CONTROLLER,
-        STORAGE_NODE
-    }
-
-    public Address getAddress() {
-        return address;
-    }
 
     public NodeRole getRole() {
         return role;
     }
 
-    public JChannel getDirectoryChannel() {
-        return directoryChannel;
+    public DirectoryService getDirectoryService() {
+        return directoryService;
     }
 
-    public MessageDispatcher getDispatcher() {
-        return dispatcher;
+    public ClientService getClientService() {
+        return clientService;
     }
 
-    public ApplicationContext getContext() {
-        return context;
+    public ControlController getControlService() {
+        return controlService;
+    }
+
+    public StorageController getStorageService() {
+        return storageService;
     }
 }

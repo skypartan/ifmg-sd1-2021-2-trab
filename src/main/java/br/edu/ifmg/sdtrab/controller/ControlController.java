@@ -33,8 +33,28 @@ public class ControlController implements RequestHandler, Receiver {
     private MessageDispatcher dispatcher;
     private LockService lockService;
 
-    public ControlController() {
+    public ControlController(NodeController nodeController) {
 
+    }
+
+    public void connect() {
+
+    }
+
+    public void disconnect() {
+
+    }
+
+    public ObjectMessage controllerHandle(ObjectMessage message) {
+        return null;
+    }
+
+    public ObjectMessage nodeHandle(ObjectMessage message) {
+        return null;
+    }
+
+    public int networkSize() {
+        return channel.getView().getMembers().size();
     }
 
     public Object transaction(Address destino, User u) {

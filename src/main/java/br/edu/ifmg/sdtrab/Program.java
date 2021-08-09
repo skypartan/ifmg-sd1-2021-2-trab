@@ -10,16 +10,13 @@ public class Program {
             System.exit(1);
         }
 
-        boolean worker = true;
-        if (args[0].equals("client"))
-            worker = false;
+        boolean worker = !args[0].equals("client");
 
-        var context = new ApplicationContext(worker);
         try {
-            context.init();
+            var context = new ApplicationContext(worker);
 
             if (worker) {
-
+                while (true) { }
             }
             else {
                 new MainWindow(context);

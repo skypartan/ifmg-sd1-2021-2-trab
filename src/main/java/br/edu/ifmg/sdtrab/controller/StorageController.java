@@ -33,9 +33,28 @@ public class StorageController implements RequestHandler, Receiver {
     private MessageDispatcher dispatcher;
     private LockService lockService;
 
+    public StorageController(NodeController nodeController) {
 
-    public StorageController() {
+    }
 
+    public void connect() {
+
+    }
+
+    public void disconnect() {
+
+    }
+
+    public ObjectMessage controllerHandle(ObjectMessage message) {
+        return null;
+    }
+
+    public ObjectMessage nodeHandle(ObjectMessage message) {
+        return null;
+    }
+
+    public int networkSize() {
+        return channel.getView().getMembers().size();
     }
 
     public Object transaction(User u) {
