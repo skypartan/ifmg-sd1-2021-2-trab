@@ -42,7 +42,7 @@ public class StorageController implements RequestHandler, Receiver {
         channel.connect("ebankData");
         dispatcher = new MessageDispatcher(channel, this);
         lockService = new LockService(channel);
-        if (this.networkSize() > 0) {
+        if (this.networkSize() > 1) {
             Lock lock = lockService.getLock("lockState"); // gets a cluster-wide lock
             lock.lock();
             try {
