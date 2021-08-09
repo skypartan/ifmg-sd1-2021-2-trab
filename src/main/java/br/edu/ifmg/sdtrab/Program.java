@@ -5,13 +5,13 @@ import br.edu.ifmg.sdtrab.ui.MainWindow;
 public class Program {
 
     public static void main(String[] args) {
-        if (args.length < 2) {
+        if (args.length < 1) {
             System.err.println("Informe se é client ou server");
             System.exit(1);
         }
 
         boolean worker = true;
-        if (args[1].equals("client"))
+        if (args[0].equals("client"))
             worker = false;
 
         var context = new ApplicationContext(worker);
