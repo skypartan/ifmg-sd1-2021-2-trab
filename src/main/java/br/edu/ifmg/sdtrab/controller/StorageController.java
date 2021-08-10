@@ -67,9 +67,9 @@ public class StorageController implements RequestHandler, Receiver {
         switch (tipo) {
             case "TRANSFER":
                 return new ObjectMessage(null,
-                         transfer((User) action.get("usuario1"),
-                        (String) action.get("usuario2"),
-                        (Float) action.get("value")));
+                        transfer((User) action.get("usuario1"),
+                                (String) action.get("usuario2"),
+                                (Float) action.get("value")));
             case "TRANSACTIONS":
                 return new ObjectMessage(null,
                         transaction((User) action.get("usuario")));
@@ -82,6 +82,9 @@ public class StorageController implements RequestHandler, Receiver {
             case "BALANCE":
                 return new ObjectMessage(null,
                         balance((String) action.get("usuario"), (String) action.get("senha")));
+            case "SUM_MONEY":
+                return new ObjectMessage(null,
+                        sum_money());
             default:
                 return null;
         }
@@ -253,6 +256,32 @@ public class StorageController implements RequestHandler, Receiver {
         return null;
     }
 
+    public BigDecimal sum_money() {
+        try {
+            var options = new RequestOptions();
+            options.setMode(ResponseMode.GET_FIRST);
+            options.setAnycasting(false);
+            options.SYNC();
+
+            HashMap<String, Object> hs = new HashMap();
+            hs.put("tipo", "SUM_MONEY");
+            ;
+
+            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            if (list == null) {
+                return null;
+            } else {
+                var status = (BigDecimal) list.getFirst();
+                return status;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+
     protected void getState() {
         try {
             var options = new RequestOptions();
@@ -380,6 +409,8 @@ public class StorageController implements RequestHandler, Receiver {
                 getObject.put("user", userDao.selectAll(this.channel.getAddressAsString()));
                 getObject.put("transf", transactionDao.selectAll(this.channel.getAddressAsString()));
                 return getObject;
+            case "SUM_MONEY":
+                return userDao.sumMoney(this.channel.getAddressAsString());
             default:
                 // do nothing
                 return 3;

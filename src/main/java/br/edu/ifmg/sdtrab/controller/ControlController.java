@@ -84,6 +84,9 @@ public class ControlController implements RequestHandler, Receiver {
             case "BALANCE":
                 new ObjectMessage(null, balance(channel.getView().getMembers().get(count),
                         (String) action.get("usuario"), (String) action.get("senha")));
+            case "SUM_MONEY":
+                return new ObjectMessage(null,
+                        sum_money(channel.getView().getMembers().get(count)));
             default:
                 // do nothing
                 return null;
@@ -94,7 +97,34 @@ public class ControlController implements RequestHandler, Receiver {
         return channel.getView().getMembers().size();
     }
 
-    public Object transaction(Address destino, User u) {
+    public BigDecimal sum_money(Address destino) {
+        try {
+            var ls = new ArrayList<Address>();
+            ls.add(destino);
+            var options = new RequestOptions();
+            options.setMode(ResponseMode.GET_FIRST);
+            options.setAnycasting(false);
+            options.SYNC();
+
+            HashMap<String, Object> hs = new HashMap();
+            hs.put("tipo", "SUM_MONEY");
+
+
+            var list = dispatcher.castMessage(ls, new ObjectMessage(destino, hs), options);
+            if (list == null) {
+                return null;
+            } else {
+                var status = (BigDecimal) list.getFirst();
+                return status;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+
+        public Object transaction(Address destino, User u) {
         // TODO(lucasgb): Verificações
         try {
             var ls = new ArrayList<Address>();
