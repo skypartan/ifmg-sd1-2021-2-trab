@@ -5,6 +5,8 @@ import org.jgroups.Message;
 import org.jgroups.ObjectMessage;
 import org.jgroups.blocks.RequestHandler;
 
+import java.util.HashMap;
+
 public class NodeController implements RequestHandler {
 
     private NodeRole role;
@@ -46,8 +48,11 @@ public class NodeController implements RequestHandler {
             controlService.disconnect();
         }
         else {
-            var controlNodesQuery = directoryService.sendMessage(new ObjectMessage(control, "NODES"));
-            var storageNodesQuery = directoryService.sendMessage(new ObjectMessage(storage, "NODES"));
+            var message = new HashMap<String, Object>();
+            message.put("task", "nodes");
+
+            var controlNodesQuery = directoryService.sendMessage(new ObjectMessage(control, message));
+            var storageNodesQuery = directoryService.sendMessage(new ObjectMessage(storage, message));
 
             var controlNodeNetwork = (int) controlNodesQuery.getObject();
             var storageNodeNetwork = (int) storageNodesQuery.getObject();
@@ -72,23 +77,23 @@ public class NodeController implements RequestHandler {
         if (msg.getSrc() == directoryService.myAddres())
             return null;
 
-        var message = (String) msg.getObject();
+        var message = (HashMap<String, Object>) msg.getObject();
         System.out.println("Recebido novo comando: " + message);
 
-        if (message.equals("QUERY"))
+        if (message.get("task").equals("query"))
             return new ObjectMessage(msg.src(), role.name()).setSrc(directoryService.myAddres());
-        if (message.equals("NODES")) {
+        if (message.get("task").equals("nodes")) {
             if (role == NodeRole.CONTROL_CONTROLLER)
                 return new ObjectMessage(msg.src(), controlService.networkSize()).setSrc(directoryService.myAddres());
             if (role == NodeRole.STORAGE_CONTROLLER)
                 return new ObjectMessage(msg.src(), storageService.networkSize()).setSrc(directoryService.myAddres());
         }
 
-        if (message.startsWith("CONTROL")) {
+        if (message.get("task").equals("control")) {
             if (role == NodeRole.CONTROL_CONTROLLER)
                 return controlService.controllerHandle((ObjectMessage) msg);
         }
-        if (message.startsWith("STORAGE")) {
+        if (message.get("task").equals("storage")) {
             if (role == NodeRole.STORAGE_CONTROLLER)
                 return storageService.controllerHandle((ObjectMessage) msg);
         }

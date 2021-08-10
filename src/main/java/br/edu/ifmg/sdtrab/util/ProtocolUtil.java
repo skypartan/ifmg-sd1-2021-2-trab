@@ -16,7 +16,7 @@ public class ProtocolUtil {
 
         return new Protocol[]{
                 // UDP Stack
-                new UDP().setBindAddr(InetAddress.getByName("127.0.0.1")),
+                new UDP().setBindAddr(InetAddress.getByName("127.0.0.1")).setLogDiscardMessages(false),
                 new PING(), // Discovery protocol
 
                 // TCP Stack
@@ -25,7 +25,6 @@ public class ProtocolUtil {
 //                new TCPPING().setPortRange(1)
 //                        .setInitialHosts(Collections.singletonList(InetSocketAddress.createUnresolved(masterNodeAddress, 1580))),
 
-                new FRAG3(),
                 new BARRIER(), // Needed to transfer state; this will block messages that modify the shared state until a digest has been taken, then unblocks all threads.
                 new MERGE3(), // Merge sub-clusters into one cluster
                 new NAKACK2(), // Ensures FIFO and reliability
@@ -34,6 +33,7 @@ public class ProtocolUtil {
                 new GMS(), // Membership
                 new UFC(), // Unicast flow control
                 new MFC(), // Multicast flow control
+                new FRAG3(),
                 new STATE_TRANSFER(), // Ensures correct state transfers
                 new CENTRAL_LOCK2(),
                 new CENTRAL_LOCK(),

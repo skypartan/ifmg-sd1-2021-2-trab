@@ -10,6 +10,7 @@ import org.jgroups.blocks.ResponseMode;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 
 public class DirectoryService implements Receiver {
 
@@ -34,7 +35,10 @@ public class DirectoryService implements Receiver {
         options.setAnycasting(false);
         options.setMode(ResponseMode.GET_ALL);
         RequestOptions.SYNC();
-        var responses = dispatcher.castMessage(null, new ObjectMessage(null, "QUERY"), options);
+
+        var queryMessage = new HashMap<String, Object>();
+        queryMessage.put("task", "query");
+        var responses = dispatcher.castMessage(null, new ObjectMessage(null, queryMessage), options);
 
         var messages = responses.getResults();
         for (Object messageObj : messages) {
@@ -51,7 +55,10 @@ public class DirectoryService implements Receiver {
         options.setAnycasting(false);
         options.setMode(ResponseMode.GET_ALL);
         RequestOptions.SYNC();
-        var responses = dispatcher.castMessage(null, new ObjectMessage(null, "QUERY"), options);
+
+        var queryMessage = new HashMap<String, Object>();
+        queryMessage.put("task", "query");
+        var responses = dispatcher.castMessage(null, new ObjectMessage(null, queryMessage), options);
 
         var messages = responses.getResults();
         for (Object messageObj : messages) {

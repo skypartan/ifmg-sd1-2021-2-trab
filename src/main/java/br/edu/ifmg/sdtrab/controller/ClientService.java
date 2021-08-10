@@ -10,7 +10,9 @@ public class ClientService {
     private DirectoryService directoryService;
 
     public ClientService(DirectoryService directoryService) {
+//        directoryService.controlController()
 
+        //var message = directoryService.sendMessage(new ObjectMessage(directoryService.controlController(), ""));
     }
 
     public void doSomething() throws Exception {
