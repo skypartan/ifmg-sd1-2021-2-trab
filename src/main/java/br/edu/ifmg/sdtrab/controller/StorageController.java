@@ -62,7 +62,29 @@ public class StorageController implements RequestHandler, Receiver {
     }
 
     public ObjectMessage controllerHandle(ObjectMessage message) {
-        return null;
+        var action = (HashMap<String, Object>) message.getObject();
+        var tipo = (String) action.get("tipo");
+        switch (tipo) {
+            case "TRANSFER":
+                return new ObjectMessage(null,
+                         transfer((User) action.get("usuario1"),
+                        (String) action.get("usuario2"),
+                        (Float) action.get("value")));
+            case "TRANSACTIONS":
+                return new ObjectMessage(null,
+                        transaction((User) action.get("usuario")));
+            case "NEW":
+                return new ObjectMessage(null,
+                        newUser((String) action.get("usuario"), (String) action.get("senha")));
+            case "LOGIN":
+                return new ObjectMessage(null,
+                        authUser((String) action.get("usuario"), (String) action.get("senha")));
+            case "BALANCE":
+                return new ObjectMessage(null,
+                        balance((String) action.get("usuario"), (String) action.get("senha")));
+            default:
+                return null;
+        }
     }
 
     public int networkSize() {

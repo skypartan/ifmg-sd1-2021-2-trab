@@ -33,9 +33,12 @@ public class ControlController implements RequestHandler, Receiver {
     private Address address;
     private MessageDispatcher dispatcher;
     private LockService lockService;
+    private NodeController nodeController;
+    private DirectoryService directoryService;
+    private int count = -1;
 
     public ControlController(NodeController nodeController) {
-
+        this.nodeController = nodeController;
     }
 
     public void connect() throws Exception {
@@ -57,7 +60,34 @@ public class ControlController implements RequestHandler, Receiver {
 
     public ObjectMessage controllerHandle(ObjectMessage message) {
 
-        return null;
+        if (count == channel.getView().getMembers().size()) {
+            count = -1;
+        }
+        count++;
+
+        var action = (HashMap<String, Object>) message.getObject();
+        var tipo = (String) action.get("tipo");
+        switch (tipo) {
+            case "TRANSFER":
+                return new ObjectMessage(null, transfer(channel.getView().getMembers().get(count),
+                        (User) action.get("usuario1"), (String) action.get("usuario2"), (Float) action.get("value")));
+            case "TRANSACTIONS":
+                return new ObjectMessage(null,
+                        transaction(channel.getView().getMembers().get(count),
+                                (User) action.get("usuario")));
+            case "NEW":
+                return new ObjectMessage(null, newUser(channel.getView().getMembers().get(count),
+                        (String) action.get("usuario"), (String) action.get("senha")));
+            case "LOGIN":
+                return new ObjectMessage(null, authUser(channel.getView().getMembers().get(count),
+                        (String) action.get("usuario"), (String) action.get("senha")));
+            case "BALANCE":
+                new ObjectMessage(null, balance(channel.getView().getMembers().get(count),
+                        (String) action.get("usuario"), (String) action.get("senha")));
+            default:
+                // do nothing
+                return null;
+        }
     }
 
     public int networkSize() {
@@ -92,7 +122,6 @@ public class ControlController implements RequestHandler, Receiver {
         }
         return null;
     }
-
 
 
     public String transfer(Address destino, User u1, String u2, float value) {
@@ -252,23 +281,8 @@ public class ControlController implements RequestHandler, Receiver {
     @Override
     public Object handle(Message msg) throws Exception {
         var action = (HashMap<String, Object>) msg.getObject();
-        var tipo = (String) action.get("tipo");
-        switch (tipo) {
-            case "TRANSFER":
-                break;
-            case "TRANSACTIONS":
-                break;
-            case "NEW":
-                break;
-            case "LOGIN":
-                break;
-            case "BALANCE":
-
-                break;
-            default:
-                // do nothing
-                return 3;
-        }
-        return 3;
+        var src = nodeController.getDirectoryService().storageController();
+        action.put("task", "storage");
+        return directoryService.sendMessage(new ObjectMessage(src, action));
     }
 }
