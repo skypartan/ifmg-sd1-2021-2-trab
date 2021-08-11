@@ -38,7 +38,10 @@ public class DirectoryService implements Receiver {
 
         var queryMessage = new HashMap<String, Object>();
         queryMessage.put("task", "query");
-        var responses = dispatcher.castMessage(null, new ObjectMessage(null, queryMessage), options);
+
+        var msg = new ObjectMessage(null, queryMessage);
+        msg.setSrc(directoryChannel.getAddress());
+        var responses = dispatcher.castMessage(null, msg, options);
 
         var messages = responses.getResults();
         for (Object messageObj : messages) {
@@ -58,7 +61,10 @@ public class DirectoryService implements Receiver {
 
         var queryMessage = new HashMap<String, Object>();
         queryMessage.put("task", "query");
-        var responses = dispatcher.castMessage(null, new ObjectMessage(null, queryMessage), options);
+
+        var msg = new ObjectMessage(null, queryMessage);
+        msg.setSrc(directoryChannel.getAddress());
+        var responses = dispatcher.castMessage(null, msg, options);
 
         var messages = responses.getResults();
         for (Object messageObj : messages) {

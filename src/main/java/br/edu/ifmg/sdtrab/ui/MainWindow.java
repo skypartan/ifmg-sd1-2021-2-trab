@@ -52,35 +52,35 @@ public class MainWindow {
 
     public void registerCommands() throws Exception {
 
-//        new CommandBuilder(context)
-//                .type(HelpCommand.class)
-//                .registry(commands)
-//                .build();
-//
-//        new CommandBuilder(context)
-//                .type(LoginCommand.class)
-//                .registry(commands)
-//                .build();
-//
-//        new CommandBuilder(context)
-//                .type(NewCommand.class)
-//                .registry(commands)
-//                .build();
-//
-//        new CommandBuilder(context)
-//                .type(BalanceCommand.class)
-//                .registry(commands)
-//                .build();
-//
+        new CommandBuilder(context)
+                .type(HelpCommand.class)
+                .registry(commands)
+                .build();
+
+        new CommandBuilder(context)
+                .type(LoginCommand.class)
+                .registry(commands)
+                .build();
+
+        new CommandBuilder(context)
+                .type(NewCommand.class)
+                .registry(commands)
+                .build();
+
+        new CommandBuilder(context)
+                .type(BalanceCommand.class)
+                .registry(commands)
+                .build();
+
 //        new CommandBuilder(context)
 //                .type(TransationCommand.class)
 //                .registry(commands)
 //                .build();
-//
-//        new CommandBuilder(context)
-//                .type(TransferCommand.class)
-//                .registry(commands)
-//                .build();
+
+        new CommandBuilder(context)
+                .type(TransferCommand.class)
+                .registry(commands)
+                .build();
 
 //        new CommandBuilder(context)
 //                .type(MontateCommand.class)

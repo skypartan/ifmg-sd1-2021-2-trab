@@ -80,8 +80,12 @@ public class NodeController implements RequestHandler {
         var message = (HashMap<String, Object>) msg.getObject();
         System.out.println("Recebido novo comando: " + message);
 
-        if (message.get("task").equals("query"))
-            return new ObjectMessage(msg.src(), role.name()).setSrc(directoryService.myAddres());
+        if (message.get("task").equals("query")) {
+            System.out.println("Informando cargo " + role.name());
+            var returns = new ObjectMessage(msg.src(), role.name()).setSrc(directoryService.myAddres());
+            System.out.println("Mensagem: " + returns);
+            return returns;
+        }
         if (message.get("task").equals("nodes")) {
             if (role == NodeRole.CONTROL_CONTROLLER)
                 return new ObjectMessage(msg.src(), controlService.networkSize()).setSrc(directoryService.myAddres());

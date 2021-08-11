@@ -3,7 +3,6 @@ package br.edu.ifmg.sdtrab.controller;
 import br.edu.ifmg.sdtrab.entity.Transaction;
 import br.edu.ifmg.sdtrab.entity.User;
 import org.jgroups.ObjectMessage;
-import org.jgroups.util.RspList;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -26,6 +25,20 @@ public class ClientService {
     public User newUser(User user) throws Exception {
         var controller = directoryService.controlController();
 
+        var command = new HashMap<String, Object>();
+        command.put("task", "control");
+        command.put("tipo", "NEW");
+        command.put("usuario", user.getName());
+        command.put("senha", user.getPasswordHash());
+
+        var result = directoryService.sendMessage(new ObjectMessage(controller, command));
+        if (result.getObject() instanceof String) {
+            System.out.println((String)result.getObject());
+            return null;
+        }
+        if (result.getObject() instanceof User)
+            return result.getObject();
+
         return null;
     }
 
@@ -35,6 +48,17 @@ public class ClientService {
      * @throws Exception Erro inesperado
      */
     public List<Transaction> history(User user) throws Exception {
+        var controller = directoryService.controlController();
+
+        var command = new HashMap<String, Object>();
+        command.put("task", "control");
+        command.put("tipo", "TRANSACTIONS");
+        command.put("usuario", user.getName());
+
+        var result = directoryService.sendMessage(new ObjectMessage(controller, command));
+        if (result.getObject() instanceof List)
+            return result.getObject();
+
         return null;
     }
 
@@ -45,6 +69,17 @@ public class ClientService {
      * @throws Exception Erro inesperado
      */
     public User find(String username) throws Exception {
+        var controller = directoryService.controlController();
+
+        var command = new HashMap<String, Object>();
+        command.put("task", "control");
+        command.put("tipo", "USER");
+        command.put("usuario", username);
+
+        var result = directoryService.sendMessage(new ObjectMessage(controller, command));
+        if (result.getObject() instanceof User)
+            return result.getObject();
+
         return null;
     }
 
@@ -54,6 +89,16 @@ public class ClientService {
      * @throws Exception Erro inesperado
      */
     public List<User> search() throws Exception {
+        var controller = directoryService.controlController();
+
+        var command = new HashMap<String, Object>();
+        command.put("task", "control");
+        command.put("tipo", "USER_LIST");
+
+        var result = directoryService.sendMessage(new ObjectMessage(controller, command));
+        if (result.getObject() instanceof List)
+            return result.getObject();
+
         return null;
     }
 
@@ -64,10 +109,33 @@ public class ClientService {
      * @throws Exception Erro inesperado
      */
     public boolean transfer(Transaction transaction) throws Exception {
+        var controller = directoryService.controlController();
+
+        var command = new HashMap<String, Object>();
+        command.put("task", "control");
+        command.put("tipo", "TRANSFER");
+        command.put("usuario1", transaction.getSender().getName());
+        command.put("usuario2", transaction.getReceiver().getName());
+        command.put("value", transaction.getValue());
+
+        var result = directoryService.sendMessage(new ObjectMessage(controller, command));
+        if (result.getObject() instanceof Boolean)
+            return result.getObject();
+
         return false;
     }
 
     public BigDecimal totalMoney() throws Exception {
+        var controller = directoryService.controlController();
+
+        var command = new HashMap<String, Object>();
+        command.put("task", "control");
+        command.put("tipo", "SUM_MONEY");
+
+        var result = directoryService.sendMessage(new ObjectMessage(controller, command));
+        if (result.getObject() instanceof BigDecimal)
+            return result.getObject();
+
         return null;
     }
 }
