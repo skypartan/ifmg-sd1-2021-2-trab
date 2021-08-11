@@ -48,7 +48,7 @@ public class ControlController implements RequestHandler, Receiver {
         channel.connect("ebankControl");
         dispatcher = new MessageDispatcher(channel, this);
         lockService = new LockService(channel);
-        RATE_LIMITER rate = (RATE_LIMITER) p[11];
+        RATE_LIMITER rate = (RATE_LIMITER) p[10];
         rate.setMaxBytes(200);
         rate.setTimePeriod(1000);
         address = channel.getAddress();

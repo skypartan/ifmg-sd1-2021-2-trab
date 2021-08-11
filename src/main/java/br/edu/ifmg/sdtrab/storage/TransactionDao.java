@@ -15,7 +15,7 @@ public class TransactionDao {
     private UserDao userDao;
 
     public TransactionDao() throws IOException, SQLException {
-        connection = new ConnectionBuilder().build();
+        //connection = new ConnectionBuilder().build();
         userDao = new UserDao();
     }
 

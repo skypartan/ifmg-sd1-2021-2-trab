@@ -13,7 +13,7 @@ public class UserDao {
     private Connection connection;
 
     public UserDao() throws IOException, SQLException {
-        connection = new ConnectionBuilder().build();
+        //connection = new ConnectionBuilder().build();
     }
 
     public boolean save(User user) throws SQLException {
