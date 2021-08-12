@@ -13,6 +13,6 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.jgroups:jgroups:5.1.8.Final'
+    implementation 'org.jgroups:jgroups:3.6.4.Final'
     implementation 'org.xerial:sqlite-jdbc:3.36.0.1'
 }

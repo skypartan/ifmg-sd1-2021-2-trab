@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
-public class DirectoryService implements Receiver {
+public class DirectoryService extends ReceiverAdapter {
 
     private JChannel directoryChannel;
     private MessageDispatcher dispatcher;
@@ -26,6 +26,9 @@ public class DirectoryService implements Receiver {
     public void connect() throws Exception {
         System.out.println("Inicializando serviço de diretório");
         directoryChannel = new JChannel(ProtocolUtil.channelProtocols());
+
+        dispatcher = new MessageDispatcher(directoryChannel, this, this, nodeController);
+
         directoryChannel.setReceiver(this);
         directoryChannel.connect("ebank-directoryChannel");
     }
@@ -34,18 +37,18 @@ public class DirectoryService implements Receiver {
         var options = new RequestOptions();
         options.setAnycasting(false);
         options.setMode(ResponseMode.GET_ALL);
-        RequestOptions.SYNC();
+        //RequestOptions.SYNC();
 
         var queryMessage = new HashMap<String, Object>();
         queryMessage.put("task", "query");
 
-        var msg = new ObjectMessage(null, queryMessage);
+        var msg = new Message(null, queryMessage);
         msg.setSrc(directoryChannel.getAddress());
         var responses = dispatcher.castMessage(null, msg, options);
 
         var messages = responses.getResults();
         for (Object messageObj : messages) {
-            var message = (ObjectMessage) messageObj;
+            var message = (Message) messageObj;
             if (message.getObject().equals("CONTROL_CONTROLLER"))
                 return message.src();
         }
@@ -57,18 +60,18 @@ public class DirectoryService implements Receiver {
         var options = new RequestOptions();
         options.setAnycasting(false);
         options.setMode(ResponseMode.GET_ALL);
-        RequestOptions.SYNC();
+//        RequestOptions.SYNC();
 
         var queryMessage = new HashMap<String, Object>();
         queryMessage.put("task", "query");
 
-        var msg = new ObjectMessage(null, queryMessage);
+        var msg = new Message(null, queryMessage);
         msg.setSrc(directoryChannel.getAddress());
         var responses = dispatcher.castMessage(null, msg, options);
 
         var messages = responses.getResults();
         for (Object messageObj : messages) {
-            var message = (ObjectMessage) messageObj;
+            var message = (Message) messageObj;
             if (message.getObject().equals("STORAGE_CONTROLLER"))
                 return message.getSrc();
         }
@@ -76,34 +79,40 @@ public class DirectoryService implements Receiver {
         return null;
     }
 
-    public ObjectMessage sendMessage(ObjectMessage message) throws Exception {
+    public Message sendMessage(Message message) throws Exception {
         var options = new RequestOptions();
         options.setAnycasting(false);
         options.setMode(ResponseMode.GET_FIRST);
         RequestOptions.SYNC();
-        var response = dispatcher.castMessage(Collections.singletonList(message.getDest()), message, options);
+        var response = dispatcher.sendMessage(message, options);
 
-        return (ObjectMessage) response.getFirst();
+        return (Message) response;
     }
 
     @Override
     public void viewAccepted(View newView) {
-        if (dispatcher == null)
-            dispatcher = new MessageDispatcher(directoryChannel, nodeController);
+//        if (dispatcher == null)
+//            dispatcher = new MessageDispatcher(directoryChannel, nodeController);
 
         System.out.println("Visão da rede: " + Arrays.toString(newView.getMembersRaw()));
 
-        try {
-            nodeController.decideRole();
-        }
-        catch (Exception e) {
-            System.out.println("Não foi possível obter cargo da rede");
-            e.printStackTrace();
-            System.exit(1);
-        }
+        new Thread(() -> {
+            try {
+                nodeController.decideRole(newView);
+            }
+            catch (Exception e) {
+                System.out.println("Não foi possível obter cargo da rede");
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }).start();
     }
 
     public Address myAddres() {
         return directoryChannel.getAddress();
+    }
+
+    public JChannel getDirectoryChannel() {
+        return directoryChannel;
     }
 }

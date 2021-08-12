@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.locks.Lock;
 
-public class StorageController implements RequestHandler, Receiver {
+public class StorageController extends ReceiverAdapter implements RequestHandler {
 
     private JChannel channel;
     private Address address;
@@ -39,8 +39,8 @@ public class StorageController implements RequestHandler, Receiver {
         Protocol[] p = ProtocolUtil.channelProtocols();
         channel = new JChannel(p);
         channel.setReceiver(this);
+        dispatcher = new MessageDispatcher(channel, this, this, this);
         channel.connect("ebankData");
-        dispatcher = new MessageDispatcher(channel, this);
         lockService = new LockService(channel);
         if (this.networkSize() > 0) {
             Lock lock = lockService.getLock("lockState"); // gets a cluster-wide lock
@@ -51,9 +51,6 @@ public class StorageController implements RequestHandler, Receiver {
                 lock.unlock();
             }
         }
-        RATE_LIMITER rate = (RATE_LIMITER) p[10];
-        rate.setMaxBytes(200);
-        rate.setTimePeriod(1000);
         address = channel.getAddress();
     }
 
@@ -61,29 +58,29 @@ public class StorageController implements RequestHandler, Receiver {
 
     }
 
-    public ObjectMessage controllerHandle(ObjectMessage message) {
+    public Message controllerHandle(Message message) {
         var action = (HashMap<String, Object>) message.getObject();
         var tipo = (String) action.get("tipo");
         switch (tipo) {
             case "TRANSFER":
-                return new ObjectMessage(null,
+                return new Message(null,
                         transfer((User) action.get("usuario1"),
                                 (String) action.get("usuario2"),
                                 (Float) action.get("value")));
             case "TRANSACTIONS":
-                return new ObjectMessage(null,
+                return new Message(null,
                         transaction((User) action.get("usuario")));
             case "NEW":
-                return new ObjectMessage(null,
+                return new Message(null,
                         newUser((String) action.get("usuario"), (String) action.get("senha")));
             case "LOGIN":
-                return new ObjectMessage(null,
+                return new Message(null,
                         authUser((String) action.get("usuario"), (String) action.get("senha")));
             case "BALANCE":
-                return new ObjectMessage(null,
+                return new Message(null,
                         balance((String) action.get("usuario"), (String) action.get("senha")));
             case "SUM_MONEY":
-                return new ObjectMessage(null,
+                return new Message(null,
                         sum_money());
             default:
                 return null;
@@ -91,7 +88,12 @@ public class StorageController implements RequestHandler, Receiver {
     }
 
     public int networkSize() {
-        return channel.getView().getMembers().size();
+        try {
+            return channel.getView().getMembers().size();
+        }
+        catch (Exception e) {
+            return 0;
+        }
     }
 
     public Object transaction(User u) {
@@ -106,7 +108,7 @@ public class StorageController implements RequestHandler, Receiver {
             hs.put("tipo", "TRANSACTIONS");
             hs.put("usuario", u);
 
-            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            var list = dispatcher.castMessage(null, new Message(null, hs), options);
             if (list != null) {
                 var status = (Integer) list.getFirst();
                 if (status == 3) {
@@ -139,7 +141,7 @@ public class StorageController implements RequestHandler, Receiver {
                 Lock lock = lockService.getLock("lockTrans"); // gets a cluster-wide lock
                 lock.lock();
                 try {
-                    var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+                    var list = dispatcher.castMessage(null, new Message(null, hs), options);
                     if (list != null) {
 
                         if (list.getResults().contains(1)) {
@@ -177,7 +179,7 @@ public class StorageController implements RequestHandler, Receiver {
             hs.put("usuario", name);
             hs.put("senha", password);
 
-            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            var list = dispatcher.castMessage(null, new Message(null, hs), options);
             if (list == null) {
                 return null;
             } else {
@@ -206,7 +208,7 @@ public class StorageController implements RequestHandler, Receiver {
             hs.put("tipo", "LOGIN");
             hs.put("usuario", name);
             hs.put("senha", password);
-            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            var list = dispatcher.castMessage(null, new Message(null, hs), options);
             if (list == null) {
                 return null;
             } else {
@@ -238,7 +240,7 @@ public class StorageController implements RequestHandler, Receiver {
             hs.put("usuario", name);
             hs.put("senha", password);
 
-            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            var list = dispatcher.castMessage(null, new Message(null, hs), options);
             if (list == null) {
                 return null;
             } else {
@@ -267,7 +269,7 @@ public class StorageController implements RequestHandler, Receiver {
             hs.put("tipo", "SUM_MONEY");
             ;
 
-            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            var list = dispatcher.castMessage(null, new Message(null, hs), options);
             if (list == null) {
                 return null;
             } else {
@@ -291,7 +293,7 @@ public class StorageController implements RequestHandler, Receiver {
 
             HashMap<String, Object> hs = new HashMap();
             hs.put("tipo", "GET_OBJECT");
-            var list = dispatcher.castMessage(null, new ObjectMessage(null, hs), options);
+            var list = dispatcher.castMessage(null, new Message(null, hs), options);
             if (list != null) {
                 var status = (HashMap) list.getFirst();
                 if (status != null) {

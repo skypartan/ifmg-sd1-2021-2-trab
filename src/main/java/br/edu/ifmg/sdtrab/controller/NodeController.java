@@ -2,7 +2,7 @@ package br.edu.ifmg.sdtrab.controller;
 
 import br.edu.ifmg.sdtrab.util.NodeRole;
 import org.jgroups.Message;
-import org.jgroups.ObjectMessage;
+import org.jgroups.View;
 import org.jgroups.blocks.RequestHandler;
 
 import java.util.HashMap;
@@ -28,14 +28,19 @@ public class NodeController implements RequestHandler {
         directoryService.connect();
     }
 
-    public void decideRole() throws Exception {
+    public void decideRole(View view) throws Exception {
         if (role == NodeRole.CLIENT_NODE)
             return;
+
+//        if (role != null)
+//            return;
 
         System.out.println("Decidindo cargo");
 
         var control = directoryService.controlController();
+        System.out.println("Controlador de controle: " + control);
         var storage = directoryService.storageController();
+        System.out.println("Controlador de armazenamento: " + storage);
 
         if (control == null) {
             role = NodeRole.CONTROL_CONTROLLER;
@@ -51,8 +56,8 @@ public class NodeController implements RequestHandler {
             var message = new HashMap<String, Object>();
             message.put("task", "nodes");
 
-            var controlNodesQuery = directoryService.sendMessage(new ObjectMessage(control, message));
-            var storageNodesQuery = directoryService.sendMessage(new ObjectMessage(storage, message));
+            var controlNodesQuery = directoryService.sendMessage(new Message(control, message));
+            var storageNodesQuery = directoryService.sendMessage(new Message(storage, message));
 
             var controlNodeNetwork = (int) controlNodesQuery.getObject();
             var storageNodeNetwork = (int) storageNodesQuery.getObject();
@@ -74,7 +79,7 @@ public class NodeController implements RequestHandler {
 
     @Override
     public Object handle(Message msg) throws Exception {
-        if (msg.getSrc() == directoryService.myAddres())
+        if (msg.getSrc().equals(directoryService.getDirectoryChannel().getAddress()))
             return null;
 
         var message = (HashMap<String, Object>) msg.getObject();
@@ -82,24 +87,33 @@ public class NodeController implements RequestHandler {
 
         if (message.get("task").equals("query")) {
             System.out.println("Informando cargo " + role.name());
-            var returns = new ObjectMessage(msg.src(), role.name()).setSrc(directoryService.myAddres());
+            var returns = new Message(msg.src(), role.name());
+            returns.setSrc(directoryService.myAddres());
             System.out.println("Mensagem: " + returns);
             return returns;
         }
         if (message.get("task").equals("nodes")) {
-            if (role == NodeRole.CONTROL_CONTROLLER)
-                return new ObjectMessage(msg.src(), controlService.networkSize()).setSrc(directoryService.myAddres());
-            if (role == NodeRole.STORAGE_CONTROLLER)
-                return new ObjectMessage(msg.src(), storageService.networkSize()).setSrc(directoryService.myAddres());
+            if (role == NodeRole.CONTROL_CONTROLLER) {
+                var tmp = new Message(msg.src(), controlService.networkSize());
+                tmp.setSrc(directoryService.myAddres());
+                System.out.println("Mensagem: " + tmp);
+                return tmp;
+            }
+            if (role == NodeRole.STORAGE_CONTROLLER) {
+                var tmp = new Message(msg.src(), storageService.networkSize());
+                tmp.setSrc(directoryService.myAddres());
+                System.out.println("Mensagem: " + tmp);
+                return tmp;
+            }
         }
 
         if (message.get("task").equals("control")) {
             if (role == NodeRole.CONTROL_CONTROLLER)
-                return controlService.controllerHandle((ObjectMessage) msg);
+                return controlService.controllerHandle((Message) msg);
         }
         if (message.get("task").equals("storage")) {
             if (role == NodeRole.STORAGE_CONTROLLER)
-                return storageService.controllerHandle((ObjectMessage) msg);
+                return storageService.controllerHandle((Message) msg);
         }
 
         return null;

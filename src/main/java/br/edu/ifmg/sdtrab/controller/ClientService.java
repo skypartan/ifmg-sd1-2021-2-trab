@@ -2,7 +2,7 @@ package br.edu.ifmg.sdtrab.controller;
 
 import br.edu.ifmg.sdtrab.entity.Transaction;
 import br.edu.ifmg.sdtrab.entity.User;
-import org.jgroups.ObjectMessage;
+import org.jgroups.Message;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -31,13 +31,13 @@ public class ClientService {
         command.put("usuario", user.getName());
         command.put("senha", user.getPasswordHash());
 
-        var result = directoryService.sendMessage(new ObjectMessage(controller, command));
+        var result = directoryService.sendMessage(new Message(controller, command));
         if (result.getObject() instanceof String) {
             System.out.println((String)result.getObject());
             return null;
         }
         if (result.getObject() instanceof User)
-            return result.getObject();
+            return (User) result.getObject();
 
         return null;
     }
@@ -55,9 +55,9 @@ public class ClientService {
         command.put("tipo", "TRANSACTIONS");
         command.put("usuario", user.getName());
 
-        var result = directoryService.sendMessage(new ObjectMessage(controller, command));
+        var result = directoryService.sendMessage(new Message(controller, command));
         if (result.getObject() instanceof List)
-            return result.getObject();
+            return (List) result.getObject();
 
         return null;
     }
@@ -76,9 +76,9 @@ public class ClientService {
         command.put("tipo", "USER");
         command.put("usuario", username);
 
-        var result = directoryService.sendMessage(new ObjectMessage(controller, command));
+        var result = directoryService.sendMessage(new Message(controller, command));
         if (result.getObject() instanceof User)
-            return result.getObject();
+            return (User) result.getObject();
 
         return null;
     }
@@ -95,9 +95,9 @@ public class ClientService {
         command.put("task", "control");
         command.put("tipo", "USER_LIST");
 
-        var result = directoryService.sendMessage(new ObjectMessage(controller, command));
+        var result = directoryService.sendMessage(new Message(controller, command));
         if (result.getObject() instanceof List)
-            return result.getObject();
+            return (List) result.getObject();
 
         return null;
     }
@@ -118,9 +118,9 @@ public class ClientService {
         command.put("usuario2", transaction.getReceiver().getName());
         command.put("value", transaction.getValue());
 
-        var result = directoryService.sendMessage(new ObjectMessage(controller, command));
+        var result = directoryService.sendMessage(new Message(controller, command));
         if (result.getObject() instanceof Boolean)
-            return result.getObject();
+            return (Boolean) result.getObject();
 
         return false;
     }
@@ -132,9 +132,9 @@ public class ClientService {
         command.put("task", "control");
         command.put("tipo", "SUM_MONEY");
 
-        var result = directoryService.sendMessage(new ObjectMessage(controller, command));
+        var result = directoryService.sendMessage(new Message(controller, command));
         if (result.getObject() instanceof BigDecimal)
-            return result.getObject();
+            return (BigDecimal) result.getObject();
 
         return null;
     }

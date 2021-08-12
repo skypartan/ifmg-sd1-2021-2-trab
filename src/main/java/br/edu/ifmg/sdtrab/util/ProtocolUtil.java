@@ -14,10 +14,19 @@ public class ProtocolUtil {
     public static Protocol[] channelProtocols() throws UnknownHostException {
         var masterNodeAddress = System.getenv("MASTER_NODE_HOST");
 
+        var udp = new UDP();
+        udp.setLogDiscardMessages(false);
+        //udp.setBindAddress(InetAddress.getByName("127.0.0.1"));
+
+        var rate = new RATE_LIMITER();
+        rate.setMaxBytes(20000);
+        rate.setTimePeriod(1000);
+
         return new Protocol[]{
                 // UDP Stack
-                new UDP().setBindAddr(InetAddress.getByName("127.0.0.1"))/*.setLogDiscardMessages(false)*/,
+                udp,
                 new PING(), // Discovery protocol
+                new MPING(),
 
                 // TCP Stack
 //                new TCP().setBindAddr(InetAddress.getByName("0.0.0.0"))
@@ -26,18 +35,19 @@ public class ProtocolUtil {
 //                        .setInitialHosts(Collections.singletonList(InetSocketAddress.createUnresolved(masterNodeAddress, 1580))),
 
                 //new BARRIER(), // Needed to transfer state; this will block messages that modify the shared state until a digest has been taken, then unblocks all threads.
-                //new MERGE3(), // Merge sub-clusters into one cluster
+                new MERGE3(), // Merge sub-clusters into one cluster
+                new FD_ALL(),
                 new NAKACK2(), // Ensures FIFO and reliability
                 new UNICAST3(), // NAKACK for unicast
-                //new SEQUENCER(), // Total order for multicast
                 new GMS(), // Membership
+                new SEQUENCER(), // Total order for multicast
                 new UFC(), // Unicast flow control
                 new MFC(), // Multicast flow control
-                new FRAG3(),
+                new FRAG2(),
                 //new STATE_TRANSFER(), // Ensures correct state transfers
                 //new CENTRAL_LOCK2(),
                 new CENTRAL_LOCK(),
-                new RATE_LIMITER(),
+                rate,
                 //new ASYM_ENCRYPT()
 
         };

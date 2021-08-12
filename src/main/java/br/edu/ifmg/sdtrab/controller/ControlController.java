@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
 
-public class ControlController implements RequestHandler, Receiver {
+public class ControlController extends ReceiverAdapter implements RequestHandler {
 
     private JChannel channel;
     private Address address;
@@ -45,12 +45,9 @@ public class ControlController implements RequestHandler, Receiver {
         Protocol[] p = ProtocolUtil.channelProtocols();
         channel = new JChannel(p);
         channel.setReceiver(this);
+        dispatcher = new MessageDispatcher(channel, this, this, this);
         channel.connect("ebankControl");
-        dispatcher = new MessageDispatcher(channel, this);
         lockService = new LockService(channel);
-        RATE_LIMITER rate = (RATE_LIMITER) p[10];
-        rate.setMaxBytes(200);
-        rate.setTimePeriod(1000);
         address = channel.getAddress();
     }
 
@@ -58,7 +55,7 @@ public class ControlController implements RequestHandler, Receiver {
 
     }
 
-    public ObjectMessage controllerHandle(ObjectMessage message) {
+    public Message controllerHandle(Message message) {
 
         if (count == channel.getView().getMembers().size()) {
             count = -1;
@@ -69,23 +66,23 @@ public class ControlController implements RequestHandler, Receiver {
         var tipo = (String) action.get("tipo");
         switch (tipo) {
             case "TRANSFER":
-                return new ObjectMessage(null, transfer(channel.getView().getMembers().get(count),
+                return new Message(null, transfer(channel.getView().getMembers().get(count),
                         (User) action.get("usuario1"), (String) action.get("usuario2"), (Float) action.get("value")));
             case "TRANSACTIONS":
-                return new ObjectMessage(null,
+                return new Message(null,
                         transaction(channel.getView().getMembers().get(count),
                                 (User) action.get("usuario")));
             case "NEW":
-                return new ObjectMessage(null, newUser(channel.getView().getMembers().get(count),
+                return new Message(null, newUser(channel.getView().getMembers().get(count),
                         (String) action.get("usuario"), (String) action.get("senha")));
             case "LOGIN":
-                return new ObjectMessage(null, authUser(channel.getView().getMembers().get(count),
+                return new Message(null, authUser(channel.getView().getMembers().get(count),
                         (String) action.get("usuario"), (String) action.get("senha")));
             case "BALANCE":
-                new ObjectMessage(null, balance(channel.getView().getMembers().get(count),
+                new Message(null, balance(channel.getView().getMembers().get(count),
                         (String) action.get("usuario"), (String) action.get("senha")));
             case "SUM_MONEY":
-                return new ObjectMessage(null,
+                return new Message(null,
                         sum_money(channel.getView().getMembers().get(count)));
             default:
                 // do nothing
@@ -94,7 +91,12 @@ public class ControlController implements RequestHandler, Receiver {
     }
 
     public int networkSize() {
-        return channel.getView().getMembers().size();
+        try {
+            return channel.getView().getMembers().size();
+        }
+        catch (Exception e) {
+            return 0;
+        }
     }
 
     public BigDecimal sum_money(Address destino) {
@@ -110,7 +112,7 @@ public class ControlController implements RequestHandler, Receiver {
             hs.put("tipo", "SUM_MONEY");
 
 
-            var list = dispatcher.castMessage(ls, new ObjectMessage(destino, hs), options);
+            var list = dispatcher.castMessage(ls, new Message(destino, hs), options);
             if (list == null) {
                 return null;
             } else {
@@ -138,7 +140,7 @@ public class ControlController implements RequestHandler, Receiver {
             hs.put("tipo", "TRANSACTIONS");
             hs.put("usuario", u);
 
-            var list = dispatcher.castMessage(ls, new ObjectMessage(destino, hs), options);
+            var list = dispatcher.castMessage(ls, new Message(destino, hs), options);
             if (list != null) {
                 var status = (Integer) list.getFirst();
                 if (status == 3) {
@@ -175,7 +177,7 @@ public class ControlController implements RequestHandler, Receiver {
                 Lock lock = lockService.getLock("lockTrans"); // gets a cluster-wide lock
                 lock.lock();
                 try {
-                    var list = dispatcher.castMessage(ls, new ObjectMessage(destino, hs), options);
+                    var list = dispatcher.castMessage(ls, new Message(destino, hs), options);
                     if (list != null) {
 
                         if (list.getResults().contains(1)) {
@@ -215,15 +217,17 @@ public class ControlController implements RequestHandler, Receiver {
             hs.put("usuario", name);
             hs.put("senha", password);
 
-            var list = dispatcher.castMessage(ls, new ObjectMessage(destino, hs), options);
+            var list = dispatcher.sendMessage(new Message(destino, hs), options);
             if (list == null) {
                 return null;
             } else {
-                var status = list.getResults();
-                if (status.contains("ERROR usuário já existe")) {
-                    return "Usuário já existe";
-                } else {
-                    return status.get(0);
+                if (list instanceof String) {
+                    if (((String) list).contains("ERROR usuário já existe")) {
+                        return "Usuário já existe";
+                    }
+                }
+                else {
+                    return list;
                 }
             }
         } catch (Exception e) {
@@ -246,7 +250,7 @@ public class ControlController implements RequestHandler, Receiver {
             hs.put("tipo", "LOGIN");
             hs.put("usuario", name);
             hs.put("senha", password);
-            var list = dispatcher.castMessage(ls, new ObjectMessage(destino, hs), options);
+            var list = dispatcher.castMessage(ls, new Message(destino, hs), options);
             if (list == null) {
                 return null;
             } else {
@@ -280,7 +284,7 @@ public class ControlController implements RequestHandler, Receiver {
             hs.put("usuario", name);
             hs.put("senha", password);
 
-            var list = dispatcher.castMessage(ls, new ObjectMessage(destino, hs), options);
+            var list = dispatcher.castMessage(ls, new Message(destino, hs), options);
             if (list == null) {
                 return null;
             } else {
@@ -313,6 +317,6 @@ public class ControlController implements RequestHandler, Receiver {
         var action = (HashMap<String, Object>) msg.getObject();
         var src = nodeController.getDirectoryService().storageController();
         action.put("task", "storage");
-        return directoryService.sendMessage(new ObjectMessage(src, action));
+        return directoryService.sendMessage(new Message(src, action));
     }
 }
