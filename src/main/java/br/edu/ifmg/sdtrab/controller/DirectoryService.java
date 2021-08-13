@@ -94,7 +94,7 @@ public class DirectoryService extends ReceiverAdapter {
 //        if (dispatcher == null)
 //            dispatcher = new MessageDispatcher(directoryChannel, nodeController);
 
-        System.out.println("Visão da rede: " + Arrays.toString(newView.getMembersRaw()));
+        System.out.println("Nós no canal de diretório: " + Arrays.toString(newView.getMembersRaw()));
 
         new Thread(() -> {
             try {

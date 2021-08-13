@@ -21,10 +21,7 @@ import java.math.BigDecimal;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 
 public class ControlController extends ReceiverAdapter implements RequestHandler {
@@ -34,7 +31,6 @@ public class ControlController extends ReceiverAdapter implements RequestHandler
     private MessageDispatcher dispatcher;
     private LockService lockService;
     private NodeController nodeController;
-    private DirectoryService directoryService;
     private int count = -1;
 
     public ControlController(NodeController nodeController) {
@@ -42,20 +38,26 @@ public class ControlController extends ReceiverAdapter implements RequestHandler
     }
 
     public void connect() throws Exception {
+        if (channel != null && channel.isConnected())
+            return;
+
         Protocol[] p = ProtocolUtil.channelProtocols();
         channel = new JChannel(p);
         channel.setReceiver(this);
         dispatcher = new MessageDispatcher(channel, this, this, this);
+        System.out.println("Conectando a ebankControl");
         channel.connect("ebankControl");
         lockService = new LockService(channel);
         address = channel.getAddress();
     }
 
     public void disconnect() {
-
+        if (channel != null && channel.isConnected())
+            channel.disconnect();
     }
 
     public Message controllerHandle(Message message) {
+        System.out.println("Controlador de controle, recebido " + message);
 
         if (count == channel.getView().getMembers().size()) {
             count = -1;
@@ -91,12 +93,13 @@ public class ControlController extends ReceiverAdapter implements RequestHandler
     }
 
     public int networkSize() {
-        try {
+        if (channel.isConnected()) {
+            System.out.println("Nós no canal de controle: " + Arrays.toString(channel.getView().getMembers().toArray()));
             return channel.getView().getMembers().size();
         }
-        catch (Exception e) {
-            return 0;
-        }
+
+        System.out.println("Não conectado no canal de controle");
+        return 1;
     }
 
     public BigDecimal sum_money(Address destino) {
@@ -314,9 +317,11 @@ public class ControlController extends ReceiverAdapter implements RequestHandler
 
     @Override
     public Object handle(Message msg) throws Exception {
+        System.out.println("Nó de controle, recebido " + msg);
+
         var action = (HashMap<String, Object>) msg.getObject();
         var src = nodeController.getDirectoryService().storageController();
         action.put("task", "storage");
-        return directoryService.sendMessage(new Message(src, action));
+        return nodeController.getDirectoryService().sendMessage(new Message(src, action));
     }
 }

@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.locks.Lock;
 
@@ -36,10 +37,14 @@ public class StorageController extends ReceiverAdapter implements RequestHandler
     }
 
     public void connect() throws Exception {
+        if (channel != null && channel.isConnected())
+            return;
+
         Protocol[] p = ProtocolUtil.channelProtocols();
         channel = new JChannel(p);
         channel.setReceiver(this);
         dispatcher = new MessageDispatcher(channel, this, this, this);
+        System.out.println("Conectando a ebankData");
         channel.connect("ebankData");
         lockService = new LockService(channel);
         if (this.networkSize() > 0) {
@@ -54,11 +59,14 @@ public class StorageController extends ReceiverAdapter implements RequestHandler
         address = channel.getAddress();
     }
 
-    public void disconnect() throws Exception {
-
+    public void disconnect() {
+        if (channel != null && channel.isConnected())
+            channel.disconnect();
     }
 
     public Message controllerHandle(Message message) {
+        System.out.println("Controlador de armazenamento, recebido " + message);
+
         var action = (HashMap<String, Object>) message.getObject();
         var tipo = (String) action.get("tipo");
         switch (tipo) {
@@ -88,12 +96,13 @@ public class StorageController extends ReceiverAdapter implements RequestHandler
     }
 
     public int networkSize() {
-        try {
+        if (channel.isConnected()) {
+            System.out.println("Nós no canal de armazenamento: " + Arrays.toString(channel.getView().getMembers().toArray()));
             return channel.getView().getMembers().size();
         }
-        catch (Exception e) {
-            return 0;
-        }
+
+        System.out.println("Não conectado no canal de armazenamento");
+        return 1;
     }
 
     public Object transaction(User u) {
@@ -333,6 +342,8 @@ public class StorageController extends ReceiverAdapter implements RequestHandler
 
     @Override
     public Object handle(Message msg) throws Exception {
+        System.out.println("Nó de armazenamento, recebido " + msg);
+
         TransactionSqliteDao transactionDao = new TransactionSqliteDao();
         UserSqliteDao userDao = new UserSqliteDao();
         var action = (HashMap<String, Object>) msg.getObject();

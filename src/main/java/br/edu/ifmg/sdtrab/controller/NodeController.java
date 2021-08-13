@@ -32,8 +32,8 @@ public class NodeController implements RequestHandler {
         if (role == NodeRole.CLIENT_NODE)
             return;
 
-//        if (role != null)
-//            return;
+        if (role != null)
+            return;
 
         System.out.println("Decidindo cargo");
 
@@ -94,14 +94,15 @@ public class NodeController implements RequestHandler {
         }
         if (message.get("task").equals("nodes")) {
             if (role == NodeRole.CONTROL_CONTROLLER) {
-                var tmp = new Message(msg.src(), controlService.networkSize());
+                var size = controlService.networkSize();
+                var tmp = new Message(msg.src(), size);
                 tmp.setSrc(directoryService.myAddres());
                 System.out.println("Mensagem: " + tmp);
                 return tmp;
             }
             if (role == NodeRole.STORAGE_CONTROLLER) {
-                var tmp = new Message(msg.src(), storageService.networkSize());
-                tmp.setSrc(directoryService.myAddres());
+                var size = storageService.networkSize();
+                var tmp = new Message(msg.src(), size);
                 System.out.println("Mensagem: " + tmp);
                 return tmp;
             }
