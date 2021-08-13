@@ -120,12 +120,16 @@ public class UserSqliteDao {
         pstmt.setString(1, name);
         ResultSet rs = pstmt.executeQuery();
         // loop through the result set
-        user.setId(rs.getInt("id"));
-        user.setName(rs.getString("name"));
-        user.setPasswordHash(rs.getString("password"));
-        user.setBalance(rs.getBigDecimal("balance"));
+        if (rs.next()) {
+            user.setId(rs.getInt("id"));
+            user.setName(rs.getString("name"));
+            user.setPasswordHash(rs.getString("password"));
+            user.setBalance(rs.getBigDecimal("balance"));
 
-        return user;
+            return user;
+        }
+        else
+            return null;
     }
 
 }

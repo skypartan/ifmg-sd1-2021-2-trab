@@ -23,7 +23,14 @@ public class ClientService {
      * @throws Exception Erro inesperado
      */
     public User newUser(User user) throws Exception {
+        System.out.println("Criando novo usuário");
         var controller = directoryService.controlController();
+        System.out.println("Controlador encontrado " + controller);
+
+        if (controller == null) {
+            System.out.println("Não foi possível se conectar à rede");
+            return null;
+        }
 
         var command = new HashMap<String, Object>();
         command.put("task", "control");
@@ -31,7 +38,10 @@ public class ClientService {
         command.put("usuario", user.getName());
         command.put("senha", user.getPasswordHash());
 
+        System.out.println("Enviando comando para controlador");
         var result = directoryService.sendMessage(new Message(controller, command));
+        System.out.println("Recebido do controlador " + result.getObject());
+
         if (result.getObject() instanceof String) {
             System.out.println((String)result.getObject());
             return null;

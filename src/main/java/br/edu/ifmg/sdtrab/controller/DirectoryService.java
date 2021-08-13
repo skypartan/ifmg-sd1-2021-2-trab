@@ -34,6 +34,7 @@ public class DirectoryService extends ReceiverAdapter {
     }
 
     public Address controlController() throws Exception {
+        System.out.println("Pesquisando controlador da camada de controle");
         var options = new RequestOptions();
         options.setAnycasting(false);
         options.setMode(ResponseMode.GET_ALL);
@@ -42,6 +43,7 @@ public class DirectoryService extends ReceiverAdapter {
         var queryMessage = new HashMap<String, Object>();
         queryMessage.put("task", "query");
 
+        System.out.println("Enviando mensagen");
         var msg = new Message(null, queryMessage);
         msg.setSrc(directoryChannel.getAddress());
         var responses = dispatcher.castMessage(null, msg, options);
@@ -49,10 +51,13 @@ public class DirectoryService extends ReceiverAdapter {
         var messages = responses.getResults();
         for (Object messageObj : messages) {
             var message = (Message) messageObj;
-            if (message.getObject().equals("CONTROL_CONTROLLER"))
+            if (message.getObject().equals("CONTROL_CONTROLLER")) {
+                System.out.println("Encontrado controlador " + message.src());
                 return message.src();
+            }
         }
 
+        System.out.println("Controlador não encontrado");
         return null;
     }
 

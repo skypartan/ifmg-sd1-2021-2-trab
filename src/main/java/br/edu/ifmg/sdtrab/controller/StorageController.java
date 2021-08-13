@@ -390,15 +390,20 @@ public class StorageController extends ReceiverAdapter implements RequestHandler
                 return transfer;
 
             case "NEW":
+                System.out.println("Criando novo usuário");
                 var usuario = userDao.find((String) action.get("usuario"), this.channel.getAddressAsString());
-                if (usuario != null)
+                if (usuario != null) {
+                    System.out.println("Usuário já existe");
                     return "ERROR usuário já existe";
+                }
                 User newUser = new User();
                 newUser.setName((String) action.get("usuario"));
                 newUser.setPasswordHash((String) action.get("senha"));
                 newUser.setBalance(BigDecimal.valueOf(1000));
                 userDao.save(newUser, this.channel.getAddressAsString());
                 newUser = userDao.find(newUser.getName(), this.channel.getAddressAsString());
+                System.out.println("Usuário criado");
+
                 return newUser;
             case "LOGIN":
                 var senha = (String) action.get("senha");

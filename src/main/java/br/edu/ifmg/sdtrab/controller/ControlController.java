@@ -60,32 +60,35 @@ public class ControlController extends ReceiverAdapter implements RequestHandler
         System.out.println("Controlador de controle, recebido " + message);
 
         if (count == channel.getView().getMembers().size()) {
-            count = -1;
+            count = 0;
         }
         count++;
+
+        var destino = channel.getView().getMembers().get(channel.getView().getMembers().size() - 1);
 
         var action = (HashMap<String, Object>) message.getObject();
         var tipo = (String) action.get("tipo");
         switch (tipo) {
             case "TRANSFER":
-                return new Message(null, transfer(channel.getView().getMembers().get(count),
+                return new Message(null, transfer(destino,
                         (User) action.get("usuario1"), (String) action.get("usuario2"), (Float) action.get("value")));
             case "TRANSACTIONS":
                 return new Message(null,
-                        transaction(channel.getView().getMembers().get(count),
+                        transaction(destino,
                                 (User) action.get("usuario")));
             case "NEW":
-                return new Message(null, newUser(channel.getView().getMembers().get(count),
+                System.out.println("Criando novo usuário");
+                return new Message(null, newUser(destino,
                         (String) action.get("usuario"), (String) action.get("senha")));
             case "LOGIN":
-                return new Message(null, authUser(channel.getView().getMembers().get(count),
+                return new Message(null, authUser(destino,
                         (String) action.get("usuario"), (String) action.get("senha")));
             case "BALANCE":
-                new Message(null, balance(channel.getView().getMembers().get(count),
+                new Message(null, balance(destino,
                         (String) action.get("usuario"), (String) action.get("senha")));
             case "SUM_MONEY":
                 return new Message(null,
-                        sum_money(channel.getView().getMembers().get(count)));
+                        sum_money(destino));
             default:
                 // do nothing
                 return null;
@@ -207,6 +210,8 @@ public class ControlController extends ReceiverAdapter implements RequestHandler
     }
 
     public Object newUser(Address destino, String name, String password) {
+        System.out.println("newUser");
+
         try {
             var ls = new ArrayList<Address>();
             ls.add(destino);
@@ -220,7 +225,9 @@ public class ControlController extends ReceiverAdapter implements RequestHandler
             hs.put("usuario", name);
             hs.put("senha", password);
 
+            System.out.println("Enviando mensagem para nó de controle");
             var list = dispatcher.sendMessage(new Message(destino, hs), options);
+            System.out.println("Recebido " + list);
             if (list == null) {
                 return null;
             } else {
